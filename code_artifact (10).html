@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>版本快速跳转</title>
+    <!-- 引入 Tailwind CSS 提供现代化的 UI 样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 渐变背景微调 */
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 transition-all duration-300 hover:shadow-2xl">
+        <!-- 头部图标与标题 -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-50 text-blue-600 rounded-full mb-4">
+                <!-- 🚀 图标 -->
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-800">版本快速跳转</h1>
+            <p class="text-sm text-gray-500 mt-2">输入版本号，一键直达对应页面</p>
+        </div>
+
+        <!-- 表单区域 -->
+        <form id="redirectForm" class="space-y-6" onsubmit="handleRedirect(event)">
+            <div>
+                <label for="versionInput" class="block text-sm font-medium text-gray-700 mb-2">版本号</label>
+                <div class="relative rounded-md shadow-sm">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 font-mono text-lg select-none">
+                        v
+                    </span>
+                    <input 
+                        type="text" 
+                        id="versionInput" 
+                        required
+                        autocomplete="off"
+                        placeholder="例如: 1" 
+                        class="block w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-mono text-gray-800 placeholder-gray-400 transition-all"
+                        oninput="updatePreview()"
+                    >
+                </div>
+            </div>
+
+            <!-- 实时目标路径预览 -->
+            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">即将跳转至</div>
+                <div id="pathPreview" class="text-sm font-mono text-blue-600 mt-1 truncate">
+                    v1.html
+                </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <button 
+                type="submit" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 transform active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center space-x-2"
+            >
+                <span>立即跳转</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                </svg>
+            </button>
+        </form>
+
+        <!-- 底部提示信息 -->
+        <div class="mt-6 text-center text-xs text-gray-400">
+            支持纯数字 (如 1)、语义化版本号 (如 1.0.0) 等任意格式
+        </div>
+    </div>
+
+    <script>
+        // 获取页面元素
+        const versionInput = document.getElementById('versionInput');
+        const pathPreview = document.getElementById('pathPreview');
+
+        // 页面加载完成后自动让输入框获得焦点
+        window.onload = function() {
+            versionInput.focus();
+            updatePreview();
+        };
+
+        // 实时更新跳转目标路径预览
+        function updatePreview() {
+            // 获取输入值并去除首尾空格，若为空则默认显示 "1"
+            const value = versionInput.value.trim() || '1';
+            // 安全过滤，防止用户输入一些特殊字符破坏 URL
+            const safeValue = encodeURIComponent(value);
+            pathPreview.textContent = `v${safeValue}.html`;
+        }
+
+        // 处理跳转逻辑
+        function handleRedirect(event) {
+            event.preventDefault();
+            const value = versionInput.value.trim();
+            if (value) {
+                const safeValue = encodeURIComponent(value);
+                window.location.href = `v${safeValue}.html`;
+            }
+        }
+    </script>
+</body>
+</html>
