@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>史上最恶毒的方块 (The Ultimate Unfair Cube - Editor Edition)</title>
+    <!-- 引入 Tailwind CSS 构建现代 UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google 字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=ZCOOL+ChuanQi&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
+            background-color: #050508;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .retro-glow {
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
+        }
+        .neon-border {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .dev-neon-border {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        /* 经典恶搞 Windows 98 风格弹窗样式 */
+        .fake-popup {
+            position: absolute;
+            background: #dfdfdf;
+            border: 3px solid #000;
+            box-shadow: 4px 4px 0px #808080, -2px -2px 0px #fff inset;
+            color: #000;
+            font-family: 'MS Sans Serif', Tahoma, Arial, sans-serif;
+            padding: 2px;
+            z-index: 100;
+            width: 280px;
+        }
+        .fake-popup-header {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 3px 6px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+        .fake-popup-body {
+            padding: 15px 10px;
+            font-size: 12px;
+            text-align: center;
+        }
+        .fake-btn {
+            background: #dfdfdf;
+            border: 1px solid #fff;
+            box-shadow: 1px 1px 0px #000, -1px -1px 0px #808080 inset;
+            padding: 2px 10px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .fake-btn:active {
+            box-shadow: -1px -1px 0px #fff, 1px 1px 0px #808080 inset;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-2 md:p-4 text-white">
+
+    <!-- 主游戏容器 -->
+    <div class="relative w-full max-w-4xl bg-slate-950 border-4 border-purple-900 rounded-xl p-3 md:p-6 neon-border flex flex-col gap-4 overflow-hidden">
+        
+        <!-- 头部状态栏 -->
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b-2 border-purple-950 pb-3">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 tracking-wider retro-glow flex items-center gap-2">
+                    <span id="ui-title">史上最恶毒的方块</span>
+                    <span class="text-xs bg-red-600 text-white px-2 py-0.5 rounded-full uppercase animate-pulse" id="ui-badge">创造地狱版</span>
+                </h1>
+                <p class="text-xs text-gray-400 mt-1" id="ui-subtitle">现已支持可视化编辑器，绘制你专属的地狱关卡！</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                <!-- 地图编辑器入口 -->
+                <button id="btn-editor-toggle" class="bg-emerald-950 hover:bg-emerald-900 border-2 border-emerald-500 px-3 py-1 rounded-md text-emerald-400 font-bold transition-all">
+                    🗺️ 编辑器 / EDITOR
+                </button>
+                <!-- 开发者模式面板切换按钮 -->
+                <button id="btn-dev" class="bg-red-950/80 hover:bg-red-900 border-2 border-red-600 px-3 py-1 rounded-md text-red-400 font-bold transition-all animate-pulse">
+                    🛠️ 开发者 / DEV
+                </button>
+                <!-- 游戏模式切换 -->
+                <button id="btn-mode" class="bg-blue-900/60 hover:bg-blue-800 border border-blue-500 px-3 py-1 rounded-md text-blue-300 font-bold transition-all">
+                    🎮 模式: 单人闯关
+                </button>
+                <!-- 语言切换按钮 -->
+                <button id="btn-lang" class="bg-purple-900/60 hover:bg-purple-800 border border-purple-500 px-3 py-1 rounded-md text-purple-300 font-bold transition-all flex items-center gap-1">
+                    🌐 <span id="current-lang-name">中文</span>
+                </button>
+                <!-- 死亡计数器 -->
+                <div class="bg-red-950/40 border border-red-500/30 px-3 py-1 rounded-md text-red-400 font-bold">
+                    <span id="ui-deaths-label">💀 失败次数: </span><span id="death-counter" class="text-red-500 text-lg font-black">0</span>
+                </div>
+                <!-- 关卡计数器 -->
+                <div class="bg-purple-950/40 border border-purple-500/30 px-3 py-1 rounded-md text-purple-400 font-bold">
+                    <span id="ui-level-label">🏆 当前关卡: </span><span id="level-title" class="text-purple-300">0 / 6</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 联机积分显示面板 -->
+        <div id="vs-scoreboard" class="hidden justify-between items-center bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-lg text-sm md:text-base font-bold shadow-inner">
+            <div class="flex items-center gap-2 text-pink-500">
+                <span class="w-3 h-3 bg-pink-500 rounded-sm"></span>
+                <span>P1 (WASD): </span>
+                <span id="p1-score" class="text-xl text-white font-black">0</span>
+            </div>
+            <div class="text-purple-400 animate-pulse text-xs tracking-widest uppercase font-mono" id="ui-vs-tip">双人欢乐竞速中</div>
+            <div class="flex items-center gap-2 text-cyan-400">
+                <span>P2 (Arrows): </span>
+                <span id="p2-score" class="text-xl text-white font-black">0</span>
+                <span class="w-3 h-3 bg-cyan-400 rounded-sm"></span>
+            </div>
+        </div>
+
+        <!-- 游戏与编辑器中心区域 -->
+        <div class="relative flex justify-center items-center bg-black rounded-lg border-2 border-slate-800 overflow-hidden" id="canvas-container">
+            <canvas id="gameCanvas" width="960" height="540" class="w-full h-auto aspect-[16/9] block"></canvas>
+            
+            <!-- 恶搞广告弹窗放置容器 -->
+            <div id="popup-overlay" class="absolute inset-0 pointer-events-none"></div>
+
+            <!-- 慢动作指示器 -->
+            <div id="time-dilation-badge" class="absolute top-4 left-4 bg-cyan-950/90 border-2 border-cyan-400 text-cyan-400 px-3 py-1 rounded-full text-xs font-bold tracking-wider hidden animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+                ⏱️ 慢速模式 (0.4X) 已启用
+            </div>
+
+            <!-- 可视化编辑器浮动工具箱 (默认隐藏) -->
+            <div id="editor-tools-panel" class="absolute bottom-4 left-4 right-4 bg-slate-950/95 border-2 border-emerald-500 rounded-lg p-2 flex flex-wrap justify-between items-center gap-2 hidden z-50">
+                <!-- 放置元件选择 -->
+                <div class="flex items-center gap-1.5 overflow-x-auto py-1">
+                    <span class="text-xs text-emerald-400 font-bold hidden md:inline">工具箱:</span>
+                    <button class="editor-tool-btn px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded hover:border-emerald-400 transition-all font-bold" data-tool="solid">🧱 墙体</button>
+                    <button class="editor-tool-btn px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded hover:border-emerald-400 transition-all font-bold" data-tool="spikes_up">🔺 地刺</button>
+                    <button class="editor-tool-btn px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded hover:border-emerald-400 transition-all font-bold" data-tool="spikes_down">🔻 吊刺</button>
+                    <button class="editor-tool-btn px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded hover:border-emerald-400 transition-all font-bold" data-tool="practice_spring">彈 弹簧</button>
+                    <button class="editor-tool-btn px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded hover:border-emerald-400 transition-all font-bold" data-tool="portal">🌀 终点</button>
+                </div>
+
+                <!-- 位置/操作控制 -->
+                <div class="flex items-center gap-2">
+                    <button id="btn-editor-clear" class="bg-red-950/80 hover:bg-red-900 border border-red-500 text-red-400 text-xs px-2.5 py-1 rounded transition-colors font-bold">
+                        🧹 清空
+                    </button>
+                    <button id="btn-editor-io" class="bg-blue-950/80 hover:bg-blue-900 border border-blue-500 text-blue-400 text-xs px-2.5 py-1 rounded transition-colors font-bold">
+                        💾 导入/导出
+                    </button>
+                    <button id="btn-editor-test" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1 rounded transition-all font-black shadow-lg shadow-emerald-950">
+                        ▶️ 测试关卡
+                    </button>
+                    <button id="btn-editor-exit" class="bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs px-2.5 py-1 rounded transition-colors font-bold">
+                        ❌ 关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部控制面板 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center mt-2">
+            <!-- 商店与时空控制 -->
+            <div class="flex flex-col gap-2">
+                <button id="btn-slow" class="w-full py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold rounded-lg border-b-4 border-blue-800 active:border-b-0 transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-900/40 text-xs md:text-sm">
+                    ⏱️ 切换慢速模式 (按 Shift)
+                </button>
+                <button id="btn-shop" class="w-full py-2 bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white font-bold rounded-lg border-b-4 border-red-900 active:border-b-0 transition-all flex items-center justify-center gap-2 text-xs md:text-sm">
+                    🛒 卑劣黑市 (已死 <span id="shop-deaths">0</span> 次)
+                </button>
+            </div>
+
+            <!-- 触屏移动虚拟控制按键 -->
+            <div class="col-span-1 md:col-span-2 flex flex-col sm:flex-row justify-center items-center gap-4 w-full" id="mobile-controls-container">
+                <!-- P1 虚拟键盘 -->
+                <div id="p1-controls" class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-pink-500 hidden sm:inline">P1:</span>
+                    <button id="ctrl-left" class="w-12 h-12 bg-pink-950/40 border-2 border-pink-500 rounded-lg text-xl active:bg-pink-700 select-none text-pink-300">⬅️</button>
+                    <button id="ctrl-jump" class="w-16 h-12 bg-pink-900 border-2 border-pink-600 rounded-lg text-sm font-bold active:bg-pink-500 select-none text-white">跳跃</button>
+                    <button id="ctrl-right" class="w-12 h-12 bg-pink-950/40 border-2 border-pink-500 rounded-lg text-xl active:bg-pink-700 select-none text-pink-300">➡️</button>
+                </div>
+
+                <!-- P2 虚拟键盘 -->
+                <div id="p2-controls" class="hidden items-center gap-2">
+                    <span class="text-xs font-bold text-cyan-400">P2:</span>
+                    <button id="ctrl-p2-left" class="w-12 h-12 bg-cyan-950/40 border-2 border-cyan-500 rounded-lg text-xl active:bg-cyan-700 select-none text-cyan-300">⬅️</button>
+                    <button id="ctrl-p2-jump" class="w-16 h-12 bg-cyan-900 border-2 border-cyan-600 rounded-lg text-sm font-bold active:bg-cyan-500 select-none text-white">跳跃</button>
+                    <button id="ctrl-p2-right" class="w-12 h-12 bg-cyan-950/40 border-2 border-cyan-500 rounded-lg text-xl active:bg-cyan-700 select-none text-cyan-300">➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 动态旁白吐槽栏 -->
+        <div class="bg-slate-900/60 border border-slate-800 p-3 rounded-lg text-center min-h-[50px] flex items-center justify-center">
+            <p id="narrator-bubble" class="text-yellow-400 font-medium text-sm md:text-base transition-all duration-300">
+                “第一关是最友好的。你只需要按下 D 一置走就行。真的。”
+            </p>
+        </div>
+    </div>
+
+    <!-- 10国语言切换弹窗 -->
+    <div id="lang-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[1200] p-4">
+        <div class="bg-slate-950 border-4 border-purple-500 rounded-xl max-w-lg w-full p-6 text-center neon-border">
+            <h2 class="text-2xl font-bold text-white tracking-wider mb-2 retro-glow">🌐 SELECT LANGUAGE</h2>
+            <p class="text-xs text-purple-400 mb-6">Choose your preferred tongue for maximum sufferance</p>
+            
+            <div class="grid grid-cols-2 gap-3 mb-6">
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="zh">简体中文 (ZH)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="en">English (EN)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="ja">日本語 (JA)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="ko">한국어 (KO)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="es">Español (ES)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="ru">Русский (RU)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="fr">Français (FR)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="de">Deutsch (DE)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="pt">Português (PT)</button>
+                <button class="lang-sel-btn p-3 bg-slate-900 hover:bg-purple-950 border border-slate-800 hover:border-purple-500 rounded-lg text-sm font-bold transition-all" data-lang="it">Italiano (IT)</button>
+            </div>
+            
+            <button id="btn-close-lang" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold transition-colors text-xs uppercase hidden">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- 萌新培训模态框 -->
+    <div id="tutorial-modal" class="fixed inset-0 bg-black/85 flex items-center justify-center z-[1100] p-4 hidden">
+        <div class="bg-slate-950 border-4 border-cyan-500 rounded-xl max-w-lg w-full p-6 text-center neon-border">
+            <div class="inline-block bg-cyan-950/80 border border-cyan-400 text-cyan-400 px-3 py-1 rounded text-xs font-bold uppercase mb-2 tracking-widest animate-pulse" id="t-badge">
+                🎮 萌新安全培训手册
+            </div>
+            <h2 class="text-2xl font-bold text-white tracking-wider mb-4 retro-glow" id="t-title">欢迎加入《史上最恶毒的方块》</h2>
+            
+            <div class="flex flex-col gap-4 text-left text-sm text-gray-300 mb-6 bg-slate-900/80 p-4 rounded-lg border border-slate-800 leading-relaxed max-h-[300px] overflow-y-auto" id="t-content">
+                <!-- JS 渲染 -->
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btn-start-tutorial" class="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg font-bold shadow-lg shadow-cyan-900/40 transition-colors">
+                    进入训练营 (萌新保护中)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 卑劣黑市商店模态框 -->
+    <div id="shop-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[1000] hidden p-4">
+        <div class="bg-slate-950 border-4 border-amber-500 rounded-xl max-w-md w-full p-6 text-center neon-border">
+            <h2 class="text-2xl font-bold text-amber-400 tracking-wider mb-1" id="shop-title">🛒 卑劣黑市</h2>
+            <p class="text-xs text-gray-400 mb-2" id="shop-subtitle">“给手残玩家的一点微小帮助（当然，价格童叟无欺）”</p>
+            
+            <div id="shop-error" class="bg-red-950/50 border border-red-500/40 text-red-400 text-xs py-2 px-3 rounded-md mb-4 min-h-[36px] flex items-center justify-center font-bold">
+                💡 请选择想要购买的特权（需扣除脑细胞积分）
+            </div>
+
+            <div class="flex flex-col gap-3 text-left mb-6" id="shop-items-container">
+                <!-- JS 渲染 -->
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btn-close-shop" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold transition-colors">
+                    滚回游戏受虐
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📥 / 📤 地图导入/导出专属模态框 (代替 Alert 更加安全稳定) -->
+    <div id="map-io-modal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[1400] hidden p-4">
+        <div class="bg-slate-950 border-4 border-blue-500 rounded-xl max-w-lg w-full p-5 text-center neon-border">
+            <h2 class="text-xl font-bold text-blue-400 tracking-widest uppercase mb-1">💾 地图导入 / 导出</h2>
+            <p class="text-[11px] text-gray-400 mb-4">使用下方的 JSON 字符串可进行地图设计分享或快速备份</p>
+            
+            <textarea id="map-json-textarea" class="w-full h-44 bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-blue-500 mb-4" placeholder="请在这里粘贴地图代码..."></textarea>
+            
+            <div class="flex gap-2">
+                <button id="btn-io-import" class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold transition-colors text-xs">
+                    📥 确认导入
+                </button>
+                <button id="btn-io-copy" class="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded font-bold transition-colors text-xs">
+                    📋 复制到剪贴板
+                </button>
+                <button id="btn-io-close" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded font-bold transition-colors text-xs">
+                    ❌ 取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🛠️ 开发者调试超级控制面板 -->
+    <div id="dev-modal" class="fixed inset-0 bg-black/95 flex items-center justify-center z-[1300] hidden p-4">
+        <div class="bg-slate-950 border-4 border-red-600 rounded-xl max-w-2xl w-full p-5 text-center dev-neon-border overflow-y-auto max-h-[95vh] text-xs">
+            <h2 class="text-2xl font-black text-red-500 tracking-widest uppercase mb-1 retro-glow">🛠️ DEV MASTER CONSOLE</h2>
+            <p class="text-[10px] text-gray-400 mb-4">全面掌控底层物理和游戏数字，彻底主宰恶毒方块</p>
+            
+            <!-- 快捷跳关区 -->
+            <div class="bg-slate-900/80 border border-red-950 p-3 rounded-lg mb-4 text-left">
+                <h3 class="font-bold text-red-400 mb-2 uppercase flex justify-between">
+                    <span>🏆 快捷跳关 / Level Selection</span>
+                    <span id="dev-current-level-display" class="text-white font-mono text-xs">Level 0</span>
+                </h3>
+                <div class="grid grid-cols-4 sm:grid-cols-7 gap-1.5" id="dev-level-buttons">
+                    <!-- JS动态挂载 -->
+                </div>
+            </div>
+
+            <!--上帝无敌模式与基础开关-->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-left">
+                <div class="bg-slate-900/80 border border-red-950 p-3 rounded-lg flex flex-col justify-between gap-2">
+                    <h3 class="font-bold text-red-400 uppercase">😇 无敌上帝模式 (God Mode)</h3>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="dev-p1-god" class="w-4 h-4 accent-red-600 rounded">
+                            <span class="text-pink-400 font-bold">Player 1 (粉色) 无敌</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="dev-p2-god" class="w-4 h-4 accent-red-600 rounded">
+                            <span class="text-cyan-400 font-bold">Player 2 (青色) 无敌</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="bg-slate-900/80 border border-red-950 p-3 rounded-lg flex flex-col justify-between gap-2">
+                    <h3 class="font-bold text-red-400 uppercase">⚙️ 辅助控制 (Utilities)</h3>
+                    <div class="flex flex-col gap-1.5">
+                        <button id="dev-btn-reset-deaths" class="w-full py-1 bg-red-950/80 hover:bg-red-900/90 border border-red-600 rounded text-red-300 font-bold transition-all text-[10px]">
+                            💀 死亡次数清零 / Reset Deaths
+                        </button>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="dev-flip-control" class="w-4 h-4 accent-red-600 rounded">
+                            <span class="text-yellow-400 font-bold">强制键盘反转 / Force Flip</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ⚡ 关卡障碍变量调节 (Hazard Variables) -->
+            <div class="bg-slate-900/80 border border-red-950 p-4 rounded-lg text-left mb-4">
+                <h3 class="font-bold text-red-400 uppercase mb-3 border-b border-red-950 pb-1">⚡ 关卡障碍与机关变量 (Hazard Modifiers)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-300">
+                    <!-- 激光移动速度 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span>🔴 激光扫射速度 (Laser Speed):</span>
+                            <span id="dev-val-laser-speed" class="text-red-400 font-bold font-mono">2.7</span>
+                        </div>
+                        <input type="range" id="dev-slider-laser-speed" min="0.1" max="10" step="0.1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                    <!-- 激光扫射宽度 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span>↔️ 激光扫射半宽 (Laser Spread):</span>
+                            <span id="dev-val-laser-spread" class="text-red-400 font-bold font-mono">515px</span>
+                        </div>
+                        <input type="range" id="dev-slider-laser-spread" min="5" max="600" step="5" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                    <!-- 追击光墙移动速度 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span>🚧 追击墙推移速度 (Chasing Wall Speed):</span>
+                            <span id="dev-val-chasing-speed" class="text-red-400 font-bold font-mono">1.75</span>
+                        </div>
+                        <input type="range" id="dev-slider-chasing-speed" min="0.5" max="8" step="0.05" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                    <!-- 飞弹火炮发射间隔 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span>🚀 飞弹发射间隔 (Launcher Interval):</span>
+                            <span id="dev-val-launcher-rate" class="text-red-400 font-bold font-mono">110</span>
+                        </div>
+                        <input type="range" id="dev-slider-launcher-rate" min="20" max="300" step="5" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                    <!-- Bug墙巡逻速度 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span>👾 Bug墙浮动速度 (Bug Wall Speed):</span>
+                            <span id="dev-val-bug-speed" class="text-red-400 font-bold font-mono">2.5</span>
+                        </div>
+                        <input type="range" id="dev-slider-bug-speed" min="0.5" max="8" step="0.1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                    <!-- 按钮关激光大扫荡maxX -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span>🚪 按钮关激光极限扫射 (B-Laser maxX):</span>
+                            <span id="dev-val-l5-laser-max" class="text-red-400 font-bold font-mono">900px</span>
+                        </div>
+                        <input type="range" id="dev-slider-l5-laser-max" min="400" max="950" step="10" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 精细物理与数字变量修改器 -->
+            <div class="bg-slate-900/80 border border-red-950 p-4 rounded-lg text-left mb-4">
+                <h3 class="font-bold text-red-400 uppercase mb-3 border-b border-red-950 pb-1">⚖️ 物理变量修改器 (Player Physics Modifiers)</h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 玩家 1 数值调整 -->
+                    <div class="flex flex-col gap-3 border-r border-red-950/40 pr-0 sm:pr-4">
+                        <h4 class="font-bold text-pink-400 border-b border-pink-950/20 pb-1">Player 1 数值修改</h4>
+                        <!-- 速度 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">🏃 移动速度 (Speed):</span>
+                                <span id="dev-val-p1-speed" class="text-pink-400 font-bold font-mono">5.5</span>
+                            </div>
+                            <input type="range" id="dev-slider-p1-speed" min="1" max="20" step="0.1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+                        </div>
+                        <!-- 跳跃力 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">🚀 跳跃高度 (Jump):</span>
+                                <span id="dev-val-p1-jump" class="text-pink-400 font-bold font-mono">12.5</span>
+                            </div>
+                            <input type="range" id="dev-slider-p1-jump" min="5" max="30" step="0.2" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+                        </div>
+                        <!-- 重力 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">🌌 重力强度 (Gravity):</span>
+                                <span id="dev-val-p1-grav" class="text-pink-400 font-bold font-mono">0.55</span>
+                            </div>
+                            <input type="range" id="dev-slider-p1-grav" min="0.05" max="2.0" step="0.01" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+                        </div>
+                        <!-- 尺寸 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">📐 玩家尺寸 (Size):</span>
+                                <span id="dev-val-p1-size" class="text-pink-400 font-bold font-mono">30px</span>
+                            </div>
+                            <input type="range" id="dev-slider-p1-size" min="10" max="80" step="1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+                        </div>
+                    </div>
+
+                    <!-- 玩家 2 数值调整 -->
+                    <div class="flex flex-col gap-3">
+                        <h4 class="font-bold text-cyan-400 border-b border-cyan-950/20 pb-1">Player 2 数值修改</h4>
+                        <!-- 速度 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">🏃 移动速度 (Speed):</span>
+                                <span id="dev-val-p2-speed" class="text-cyan-400 font-bold font-mono">5.5</span>
+                            </div>
+                            <input type="range" id="dev-slider-p2-speed" min="1" max="20" step="0.1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        </div>
+                        <!-- 跳跃力 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">🚀 跳跃高度 (Jump):</span>
+                                <span id="dev-val-p2-jump" class="text-cyan-400 font-bold font-mono">12.5</span>
+                            </div>
+                            <input type="range" id="dev-slider-p2-jump" min="5" max="30" step="0.2" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        </div>
+                        <!-- 重力 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">🌌 重力强度 (Gravity):</span>
+                                <span id="dev-val-p2-grav" class="text-cyan-400 font-bold font-mono">0.55</span>
+                            </div>
+                            <input type="range" id="dev-slider-p2-grav" min="0.05" max="2.0" step="0.01" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        </div>
+                        <!-- 尺寸 -->
+                        <div>
+                            <div class="flex justify-between mb-0.5">
+                                <span class="text-gray-400">📐 玩家尺寸 (Size):</span>
+                                <span id="dev-val-p2-size" class="text-cyan-400 font-bold font-mono">30px</span>
+                            </div>
+                            <input type="range" id="dev-slider-p2-size" min="10" max="80" step="1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 全局环境设置 -->
+                <div class="border-t border-red-950/40 mt-4 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 全局时间速率 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span class="text-gray-400">⏱| 全局时标 (Global Time Scale):</span>
+                            <span id="dev-val-timescale" class="text-red-400 font-bold font-mono">1.0</span>
+                        </div>
+                        <input type="range" id="dev-slider-timescale" min="0.1" max="3" step="0.1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                    <!-- 地震晃动系数 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <span class="text-gray-400">🫨 地震晃动系数 (Shake Scale):</span>
+                            <span id="dev-val-shake" class="text-red-400 font-bold font-mono">1.0</span>
+                        </div>
+                        <input type="range" id="dev-slider-shake" min="0" max="3" step="0.1" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 保存并关闭 -->
+            <button id="dev-btn-close" class="w-full py-3 bg-gradient-to-r from-red-700 to-pink-700 hover:from-red-600 hover:to-pink-600 text-white rounded-lg font-bold shadow-lg shadow-red-950 transition-colors uppercase text-sm">
+                保存并关闭 (Save & Close)
+            </button>
+        </div>
+    </div>
+
+    <!-- 自定义免 Alert 浮窗横幅 (Toast Notification) -->
+    <div id="toast-banner" class="fixed top-6 bg-slate-900 border-2 border-emerald-500 text-emerald-400 px-6 py-3 rounded-lg shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all duration-300 transform -translate-y-24 opacity-0 z-[1600] pointer-events-none font-bold text-sm flex items-center gap-2">
+        <span>💡</span> <span id="toast-text">通知内容</span>
+    </div>
+
+    <!-- 核心运行脚本 -->
+    <script>
+        // 游戏及编辑器基础变量
+        let currentLang = 'zh'; 
+        let gameMode = 'single'; 
+        let gateOpened = false; 
+        let isFirstLoad = true; 
+        let shakeMultiplier = 1.0; 
+
+        // 核心运行全局变量 (修复缺失)
+        let currentLevelIndex = 0;
+        let deaths = 0;
+        let isRunning = true;
+        let p1DraggingPointerId = null; 
+        let p2DraggingPointerId = null; 
+        let globalTimer = 0; 
+        let screenShake = 0; 
+
+        // 地图编辑器相关的关键数据
+        let isEditorMode = false;
+        let selectedEditorTool = 'solid'; // 可选: 'solid', 'spikes_up', 'spikes_down', 'practice_spring', 'portal'
+        let customMapElements = []; // 用户在编辑器里创建的元件集合
+        let editorDragStart = null; // 用于绘制拖拽判定 { x, y }
+        let editorMousePos = { x: 0, y: 0 }; // 实时鼠标高亮位置
+
+        // 🛠️ 开发者关卡微调
+        const devSettings = {
+            laserSpeed: 2.7,       
+            laserSpread: 515,      
+            chasingWallSpeed: 1.75,
+            launcherFireRate: 110, 
+            bugWallSpeed: 2.5,     
+            level5LaserMaxX: 900,  
+        };
+
+        const langNames = {
+            zh: "简体中文", en: "English", ja: "日本語", ko: "한국어", es: "Español",
+            ru: "Русский", fr: "Français", de: "Deutsch", pt: "Português", it: "Italiano"
+        };
+
+        // 国际化字典
+        const i18n = {
+            zh: {
+                title: "史上最恶毒的方块",
+                badge: "创造地狱版",
+                subtitle: "现已支持可视化编辑器，绘制你专属的地狱关卡！",
+                deathsLabel: "💀 失败次数: ",
+                levelLabel: "🏆 当前关卡: ",
+                slowBtn: "⏱️ 切换慢速模式 (按 Shift)",
+                slowModeActive: "⏱️ 慢速模式 (0.4X) 已启用",
+                slowNarrator: "“ 启动了慢速模式？太嫩了。但我依然为你准备了无数种死法。 ”",
+                jumpBtn: "跳跃",
+                shopBtn: "🛒 卑劣黑市 (已探索失败 {deaths} 次)",
+                shopTitle: "🛒 卑劣黑市",
+                shopSubtitle: "“给手残玩家的一点微小帮助（当然，价格高昂）”",
+                shopTip: "💡 请选择想要购买的特权（需扣除脑细胞）",
+                closeShop: "滚回游戏继续挑战",
+                tutorialBadge: "🎮 萌新安全培训手册",
+                tutorialTitle: "欢迎加入《史上最恶毒的方块》",
+                tutorialConfirm: "进入训练营 (萌新保护中)",
+                tutorialContent: `
+                    <div class="flex items-start gap-3">
+                        <span class="text-cyan-400 font-bold">① 基础移动：</span>
+                        <p>使用 <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">A</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">D</kbd>（或方向键）进行左右走动。</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-cyan-400 font-bold">② 弹性起跳：</span>
+                        <p>使用 <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">W</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">空格键</kbd>起跳避开危险地刺。</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-cyan-400 font-bold">③ 可视化编辑器：</span>
+                        <p>点击上方 <b class="text-emerald-400">🗺️ 编辑器 / EDITOR</b> 按钮，即可在画布上自由用鼠标拖拽绘制障碍！</p>
+                    </div>
+                    <div class="flex items-start gap-3 bg-blue-950/50 p-2 rounded border border-blue-800 text-blue-300">
+                        <span class="font-bold">🎮 联机提示：</span>
+                        <p>支持单人挑战、双人PK对决、以及最新的<b>双人合作过关模式</b>！</p>
+                    </div>
+                `,
+                shopItems: [
+                    { name: "😇 绝对无敌护盾", desc: "直接免疫所有地刺、激光和制导导弹" },
+                    { name: "🚀 超级五段跳", desc: "让你能在空中踩着空气向上连跳5次" },
+                    { name: "🚪 一键直达终点", desc: "直接跳过当前令人抓狂的关卡" }
+                ],
+                shopErrors: [
+                    "❌ 余额不足！请再接再厉，在关卡中磨炼你的技术吧。",
+                    "❌ 购买失败：当前 system 因‘设计师没钱吃饱饭’而暂时罢工。",
+                    "❌ 支付通道被封：由于检测到玩家操作过于优秀，系统拒绝您的账单。",
+                    "❌ 鉴权失败：检测到您的金币余额不足，无法绑定此高端特权。"
+                ],
+                winTitle: "恭喜通关！真正的勇士！",
+                winDeaths: "你最终尝试了 {deaths} 次！你的键盘依然完好简直是物理奇迹。",
+                winFooter: "感谢体验这款充满‘关爱与温暖’的游戏！",
+                canvasTestTip: "① P1: WASD / P2: 方向键 移动",
+                canvasJumpTip: "② P1: W / P2: Up 起跳",
+                canvasSlowTip: "③ 按 Shift 键进入‘慢速时空’",
+                canvasDragTip: "④ 试试直接用鼠标或手指按住我拖动飞天！",
+                canvasExitTip: "进入出口开启正式试炼！ ➜",
+                canvasSpringTip: "“ 这是一个测试尖刺。别怕，踩到它它只会把你弹飞，并不会扎碎你。 ”",
+                deathReasonVoid: "跌落深空传送！🌌",
+                deathReasonSpike: "遭遇热能，正在初始化！☠️",
+                deathReasonSpring: "飞出了教学安全网！",
+                deathReasonTrap: "中了真假传送门钓鱼陷阱！🎣",
+                deathReasonPop: "乱点垃圾广告虚假弹窗！🖱️",
+                deathReasonMissile: "制导能量弹碰撞！💥",
+                deathReasonLaserWall: "被激光墙拦截传送！⚡",
+                modeSingle: "🎮 模式: 单人闯关",
+                modeVersus: "⚔️ 模式: 本地双人对决",
+                modeCoop: "🤝 模式: 本地双人合作",
+                vsScoreP1: "P1 夺得本关 1 分！",
+                vsScoreP2: "P2 夺得本关 1 分！",
+                vsFinalWinP1: "👑 玩家 1 (WASD) 获得了胜利！",
+                vsFinalWinP2: "👑 玩家 2 (方向键) 获得了胜利！",
+                vsFinalTie: "🤝 难分伯仲！平局！",
+                coopRacing: "🤝 合作模式：携手通关 / COOPERATING",
+                coopStatusP1: "P1 状态: ",
+                coopStatusP2: "P2 状态: ",
+                coopStatusGoing: "冲刺中 🏃",
+                coopStatusReady: "就绪 🟢"
+            },
+            en: {
+                title: "Ultimate Unfair Cube",
+                badge: "CREATOR",
+                subtitle: "Level Editor added! Paint your own hellish playground!",
+                deathsLabel: "💀 Retries: ",
+                levelLabel: "🏆 Level: ",
+                slowBtn: "⏱️ Toggle Slow Motion (Shift)",
+                slowModeActive: "⏱️ Slow Motion (0.4X) Active",
+                slowNarrator: "“ Using slow motion? Cute. But I still have infinite ways to end you. ”",
+                jumpBtn: "Jump",
+                shopBtn: "🛒 Black Market ({deaths} Retries)",
+                shopTitle: "🛒 Black Market",
+                shopSubtitle: "“A tiny assistance for clumsy players (of course, it's very expensive)”",
+                shopTip: "💡 Please select a hack (brain cells will be deducted)",
+                closeShop: "Get back and keep suffering",
+                tutorialBadge: "🎮 Rookie Survival Training",
+                tutorialTitle: "Welcome to The Ultimate Unfair Cube",
+                tutorialConfirm: "Enter Training Safehouse",
+                tutorialContent: `
+                    <div class="flex items-start gap-3">
+                        <span class="text-cyan-400 font-bold">① Movement:</span>
+                        <p>Use <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">A</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">D</kbd> or arrow keys to move.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-cyan-400 font-bold">② Jump:</span>
+                        <p>Use <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">W</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-xs">Space</kbd> to jump.</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-cyan-400 font-bold">③ Custom Level Editor:</span>
+                        <p>Click <b class="text-emerald-400">🗺️ 编辑器 / EDITOR</b> on top to drag and draw your custom structures!</p>
+                    </div>
+                `,
+                shopItems: [
+                    { name: "😇 Absolute Invincibility", desc: "Instantly immune to all spikes, lasers, and missiles" },
+                    { name: "🚀 Pentuple Air Jump", desc: "Allows you to jump up to 5 times consecutively in mid-air" },
+                    { name: "🚪 Skip to Endpoint", desc: "Skip the current devastating stage immediately" }
+                ],
+                shopErrors: [
+                    "❌ Insufficient Balance! Play more to sharpen your raw gaming skills.",
+                    "❌ Purchase Failed: The payment gateway went on strike because the developer was hungry."
+                ],
+                winTitle: "VICTORY! YOU ARE A TRUE HERO!",
+                winDeaths: "You tried {deaths} times! Your keyboard surviving this is a physical miracle.",
+                winFooter: "Thank you for playing this game of pure 'warmth and love'!",
+                canvasTestTip: "① P1: WASD / P2: Arrows Move",
+                canvasJumpTip: "② P1: W / P2: Up to Jump",
+                canvasSlowTip: "③ Press Shift to Dilate Time",
+                canvasDragTip: "④ Try to CLICK and DRAG me to FLY!",
+                canvasExitTip: "Enter the gateway to start! ➜",
+                canvasSpringTip: "“ This is a training spring. It bounces but never pierces you. ”",
+                deathReasonVoid: "Fell into deep space! 🌌",
+                deathReasonSpike: "Hit thermal spikes, restoring! ☠️",
+                deathReasonSpring: "Flew out of safety nets!",
+                deathReasonTrap: "Trapped in the true/fake portal decoy! 🎣",
+                deathReasonPop: "Clicked annoying fake ad popups! 🖱️",
+                deathReasonMissile: "Blasted by homing heat particles! 💥",
+                deathReasonLaserWall: "Intercepted by chasing laser wall! ⚡",
+                modeSingle: "🎮 Mode: Single Player",
+                modeVersus: "⚔️ Mode: Local 2P Versus",
+                modeCoop: "🤝 Mode: Local 2P Co-op",
+                vsScoreP1: "Player 1 scored 1 point!",
+                vsScoreP2: "Player 2 scored 1 point!",
+                vsFinalWinP1: "👑 Player 1 (WASD) DOMINATED THE RACE!",
+                vsFinalWinP2: "👑 Player 2 (ARROWS) DOMINATED THE RACE!",
+                vsFinalTie: "🤝 It's a Tie! Legendary Match!",
+                coopRacing: "🤝 Co-op Mode: Work Together! / COOP",
+                coopStatusP1: "P1 Status: ",
+                coopStatusP2: "P2 Status: ",
+                coopStatusGoing: "Going 🏃",
+                coopStatusReady: "READY 🟢"
+            },
+            ja: { title: "史上最悪の理不尽キュー合" },
+            ko: { title: "세상에서 가장 악랄한 큐브" },
+            es: { title: "El Cubo Más Injusto de la Historia" },
+            ru: { title: "Самый Нечестный Куб в Истории" },
+            fr: { title: "Le Cube Le Plus Injuste de l'Histoire" },
+            de: { title: "Der Unfairste Würfel der Geschichte" },
+            pt: { title: "O Cubo Mais Injusto da História" },
+            it: { title: "Il Cubo Più Ingiusto della Storia" }
+        };
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const LOGIC_WIDTH = 960;
+        const LOGIC_HEIGHT = 540;
+
+        // 全局时间步长系统
+        let timeScale = 1.0; 
+        let lastTime = performance.now();
+        let dt = 1.0; 
+
+        // 音效系统
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'jump') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                } else if (type === 'die') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.3);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now); osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, now);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                } else if (type === 'spring') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(480, now + 0.2);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                }
+            } catch (e) {
+                console.warn("Audio Context blocked");
+            }
+        }
+
+        // 旁白语录
+        const levelQuotes = {
+            0: { zh: ["这是安全的‘新人教学关卡’。放轻松！"], en: ["This is the safe 'Tutorial Camp'. Relax!"] },
+            1: { zh: ["第一关是最友好的。如果你连这关都过不去，建议换一个游戏。"], en: ["Stage 1 is the friendliest. If you can't pass this, maybe try another game."] },
+            2: { zh: ["听着，拖拽并不意味着无敌。中间来回横扫的高能激光会教你做方块。"], en: ["Dragging doesn't mean invulnerability. The sweeping laser in the middle will teach you a lesson."] },
+            3: { zh: ["警告：左侧有一面致命的红外死光墙正在极速向右推进！"], en: ["Warning: A lethal infrared death wall is rushing from the left!"] },
+            4: { zh: ["‘量子坍缩’。这次虽然漫天导弹，但你能隐约看到隐藏平台的线索了！"], en: ["'Quantum Collapse'. Missiles are flying, but you can see subtle silhouettes!"] },
+            5: { zh: ["这里有三个按钮。只有一个能打开出口，其他两个...祝你好运。"], en: ["There are three buttons. Only one opens the exit, the other two... good luck."] },
+            6: { zh: ["系统已经彻底崩溃。现在你的键盘方向每 4 秒就会随机反转一次！"], en: ["The system has collapsed. Your keyboard controls will flip randomly every 4 seconds!"] },
+            7: { zh: ["正在玩你的自定义关卡！在这里，规则由你来定！", "感觉太简单？快回编辑器再加几个地刺！"], en: ["Playing custom level! You make the rules here!", "Too easy? Go back and add more spikes!"] }
+        };
+
+        const glitchPools = {
+            zh: [
+                { t: "内存智商不足异常", d: "检测到玩家跳跃时机极差，系统拒绝执行该次操作。" },
+                { t: "充值警告", d: "继续玩下去需充值 5 毛钱，否则方块将在 3 秒内溶解。" }
+            ],
+            en: [
+                { t: "Low IQ Exception", d: "System detected poor jumping. Aborting operations." },
+                { t: "Recharge Warning", d: "Please insert $0.5 to continue, or the cube dissolves." }
+            ]
+        };
+
+        // 玩家 1 (WASD)
+        const player1 = {
+            id: 1, x: 60, y: 390, width: 30, height: 30, vx: 0, vy: 0,
+            speed: 5.5, jumpForce: 12.5, gravity: 0.55, grounded: false,
+            isDead: false, isInvincible: false, scaleX: 1, scaleY: 1,
+            color: "#ff007f", gravityInvert: false, controlFlip: false,
+            respawnTimer: 0, reachedPortal: false 
+        };
+
+        // 玩家 2 (Arrows)
+        const player2 = {
+            id: 2, x: 80, y: 390, width: 30, height: 30, vx: 0, vy: 0,
+            speed: 5.5, jumpForce: 12.5, gravity: 0.55, grounded: false,
+            isDead: false, isInvincible: false, scaleX: 1, scaleY: 1,
+            color: "#00f3ff", gravityInvert: false, controlFlip: false,
+            respawnTimer: 0, reachedPortal: false 
+        };
+
+        const MAX_PARTICLES = 120;
+        let particles = [];
+
+        // 自定义弹出横幅提示系统 (安全免 alert)
+        function showToast(text, isError = false) {
+            const banner = document.getElementById("toast-banner");
+            const textBox = document.getElementById("toast-text");
+            textBox.innerText = text;
+            banner.className = `fixed top-6 px-6 py-3 rounded-lg shadow-xl transition-all duration-300 transform translate-y-0 opacity-100 z-[1600] font-bold text-sm flex items-center gap-2 ${
+                isError 
+                ? "bg-red-950 border-2 border-red-500 text-red-400" 
+                : "bg-emerald-950 border-2 border-emerald-500 text-emerald-400"
+            }`;
+            
+            setTimeout(() => {
+                banner.className = "fixed top-6 bg-slate-900 border-2 border-emerald-500 text-emerald-400 px-6 py-3 rounded-lg shadow-xl transition-all duration-300 transform -translate-y-24 opacity-0 z-[1600] pointer-events-none font-bold text-sm flex items-center gap-2";
+            }, 3000);
+        }
+
+        function switchGameMode() {
+            if (gameMode === 'single') {
+                gameMode = 'versus';
+            } else if (gameMode === 'versus') {
+                gameMode = 'coop';
+            } else {
+                gameMode = 'single';
+            }
+            playSound('click');
+            p1Score = 0; p2Score = 0; deaths = 0;
+            
+            const scoreboard = document.getElementById("vs-scoreboard");
+            if (gameMode !== 'single') {
+                scoreboard.classList.remove("hidden");
+                scoreboard.classList.add("flex");
+            } else {
+                scoreboard.classList.add("hidden");
+                scoreboard.classList.remove("flex");
+            }
+
+            currentLevelIndex = 0;
+            respawnPlayer(player1);
+            respawnPlayer(player2);
+            buildLevel(currentLevelIndex);
+        }
+
+        function showLanguageModal(allowCancel) {
+            const cancelBtn = document.getElementById("btn-close-lang");
+            if (allowCancel) cancelBtn.classList.remove("hidden");
+            else cancelBtn.classList.add("hidden");
+            document.getElementById("lang-modal").classList.remove("hidden");
+        }
+
+        document.getElementById("btn-lang").onclick = () => {
+            playSound('click');
+            showLanguageModal(true);
+        };
+
+        document.getElementById("btn-close-lang").onclick = () => {
+            playSound('click');
+            document.getElementById("lang-modal").classList.add("hidden");
+        };
+
+        const langBtns = document.querySelectorAll(".lang-sel-btn");
+        langBtns.forEach(btn => {
+            btn.onclick = () => {
+                currentLang = btn.getAttribute("data-lang");
+                playSound('click');
+                document.getElementById("lang-modal").classList.add("hidden");
+                updateUI();
+                
+                if (isFirstLoad) {
+                    document.getElementById("tutorial-modal").classList.remove("hidden");
+                    isFirstLoad = false;
+                }
+            };
+        });
+
+        // 🛠️ 开发者控制面板
+        const devModal = document.getElementById("dev-modal");
+        document.getElementById("btn-dev").onclick = () => {
+            playSound('click');
+            
+            document.getElementById("dev-slider-p1-speed").value = player1.speed;
+            document.getElementById("dev-val-p1-speed").innerText = player1.speed;
+            document.getElementById("dev-slider-p1-jump").value = player1.jumpForce;
+            document.getElementById("dev-val-p1-jump").innerText = player1.jumpForce;
+            document.getElementById("dev-slider-p1-grav").value = player1.gravity;
+            document.getElementById("dev-val-p1-grav").innerText = player1.gravity;
+            document.getElementById("dev-slider-p1-size").value = player1.width;
+            document.getElementById("dev-val-p1-size").innerText = player1.width + "px";
+
+            document.getElementById("dev-slider-p2-speed").value = player2.speed;
+            document.getElementById("dev-val-p2-speed").innerText = player2.speed;
+            document.getElementById("dev-slider-p2-jump").value = player2.jumpForce;
+            document.getElementById("dev-val-p2-jump").innerText = player2.jumpForce;
+            document.getElementById("dev-slider-p2-grav").value = player2.gravity;
+            document.getElementById("dev-val-p2-grav").innerText = player2.gravity;
+            document.getElementById("dev-slider-p2-size").value = player2.width;
+            document.getElementById("dev-val-p2-size").innerText = player2.width + "px";
+
+            document.getElementById("dev-slider-timescale").value = timeScale;
+            document.getElementById("dev-val-timescale").innerText = timeScale;
+            document.getElementById("dev-slider-shake").value = shakeMultiplier;
+            document.getElementById("dev-val-shake").innerText = shakeMultiplier.toFixed(1);
+
+            document.getElementById("dev-slider-laser-speed").value = devSettings.laserSpeed;
+            document.getElementById("dev-val-laser-speed").innerText = devSettings.laserSpeed;
+            document.getElementById("dev-slider-laser-spread").value = devSettings.laserSpread;
+            document.getElementById("dev-val-laser-spread").innerText = devSettings.laserSpread + "px";
+            document.getElementById("dev-slider-chasing-speed").value = devSettings.chasingWallSpeed;
+            document.getElementById("dev-val-chasing-speed").innerText = devSettings.chasingWallSpeed;
+            document.getElementById("dev-slider-launcher-rate").value = devSettings.launcherFireRate;
+            document.getElementById("dev-val-launcher-rate").innerText = devSettings.launcherFireRate;
+            document.getElementById("dev-slider-bug-speed").value = devSettings.bugWallSpeed;
+            document.getElementById("dev-val-bug-speed").innerText = devSettings.bugWallSpeed;
+            document.getElementById("dev-slider-l5-laser-max").value = devSettings.level5LaserMaxX;
+            document.getElementById("dev-val-l5-laser-max").innerText = devSettings.level5LaserMaxX + "px";
+
+            document.getElementById("dev-p1-god").checked = player1.isInvincible;
+            document.getElementById("dev-p2-god").checked = player2.isInvincible;
+            document.getElementById("dev-flip-control").checked = player1.controlFlip;
+
+            const btnContainer = document.getElementById("dev-level-buttons");
+            btnContainer.innerHTML = "";
+            levels.forEach((lvl, idx) => {
+                const activeClass = (idx === currentLevelIndex) ? 'bg-red-600 text-white' : 'bg-slate-800 text-gray-300 hover:bg-slate-700';
+                btnContainer.innerHTML += `
+                    <button onclick="skipToLevel(${idx})" class="py-1 px-1 rounded border border-red-950 font-bold transition-all ${activeClass}">
+                        Lvl ${idx}
+                    </button>
+                `;
+            });
+            document.getElementById("dev-current-level-display").innerText = `Level ${currentLevelIndex}`;
+
+            devModal.classList.remove("hidden");
+        };
+
+        document.getElementById("dev-btn-close").onclick = () => {
+            playSound('click');
+            devModal.classList.add("hidden");
+        };
+
+        document.getElementById("dev-p1-god").onchange = (e) => { player1.isInvincible = e.target.checked; playSound('win'); };
+        document.getElementById("dev-p2-god").onchange = (e) => { player2.isInvincible = e.target.checked; playSound('win'); };
+        document.getElementById("dev-flip-control").onchange = (e) => { player1.controlFlip = e.target.checked; player2.controlFlip = e.target.checked; playSound('win'); };
+
+        document.getElementById("dev-btn-reset-deaths").onclick = () => {
+            deaths = 0;
+            document.getElementById("death-counter").innerText = deaths;
+            document.getElementById("shop-deaths").innerText = deaths;
+            updateUI();
+            playSound('win');
+        };
+
+        function skipToLevel(idx) {
+            playSound('win');
+            currentLevelIndex = idx;
+            devModal.classList.add("hidden");
+            respawnPlayer(player1);
+            respawnPlayer(player2);
+            buildLevel(currentLevelIndex);
+        }
+
+        // 绑定滑块更新
+        function setupSlider(id, targetObj, targetProp, formatFn) {
+            document.getElementById(id).oninput = (e) => {
+                const val = parseFloat(e.target.value);
+                targetObj[targetProp] = val;
+                if (formatFn) formatFn(val);
+            };
+        }
+
+        setupSlider("dev-slider-p1-speed", player1, "speed", (v) => { document.getElementById("dev-val-p1-speed").innerText = v.toFixed(1); });
+        setupSlider("dev-slider-p1-jump", player1, "jumpForce", (v) => { document.getElementById("dev-val-p1-jump").innerText = v.toFixed(1); });
+        setupSlider("dev-slider-p1-grav", player1, "gravity", (v) => { document.getElementById("dev-val-p1-grav").innerText = v.toFixed(2); });
+        document.getElementById("dev-slider-p1-size").oninput = (e) => {
+            const val = parseInt(e.target.value);
+            player1.width = val; player1.height = val;
+            document.getElementById("dev-val-p1-size").innerText = val + "px";
+        };
+
+        setupSlider("dev-slider-p2-speed", player2, "speed", (v) => { document.getElementById("dev-val-p2-speed").innerText = v.toFixed(1); });
+        setupSlider("dev-slider-p2-jump", player2, "jumpForce", (v) => { document.getElementById("dev-val-p2-jump").innerText = v.toFixed(1); });
+        setupSlider("dev-slider-p2-grav", player2, "gravity", (v) => { document.getElementById("dev-val-p2-grav").innerText = v.toFixed(2); });
+        document.getElementById("dev-slider-p2-size").oninput = (e) => {
+            const val = parseInt(e.target.value);
+            player2.width = val; player2.height = val;
+            document.getElementById("dev-val-p2-size").innerText = val + "px";
+        };
+
+        document.getElementById("dev-slider-timescale").oninput = (e) => {
+            timeScale = parseFloat(e.target.value);
+            document.getElementById("dev-val-timescale").innerText = timeScale.toFixed(1);
+        };
+        document.getElementById("dev-slider-shake").oninput = (e) => {
+            shakeMultiplier = parseFloat(e.target.value);
+            document.getElementById("dev-val-shake").innerText = shakeMultiplier.toFixed(1);
+        };
+
+        document.getElementById("dev-slider-laser-speed").oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            devSettings.laserSpeed = val;
+            document.getElementById("dev-val-laser-speed").innerText = val.toFixed(1);
+            const laser = hazards.find(h => h.type === "moving_laser" && currentLevelIndex === 2);
+            if (laser) laser.vx = val * Math.sign(laser.vx);
+        };
+
+        document.getElementById("dev-slider-laser-spread").oninput = (e) => {
+            const val = parseInt(e.target.value);
+            devSettings.laserSpread = val;
+            document.getElementById("dev-val-laser-spread").innerText = val + "px";
+            const laser = hazards.find(h => h.type === "moving_laser" && currentLevelIndex === 2);
+            if (laser) {
+                laser.minX = 480 - val;
+                laser.maxX = 480 + val;
+            }
+        };
+
+        document.getElementById("dev-slider-chasing-speed").oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            devSettings.chasingWallSpeed = val;
+            document.getElementById("dev-val-chasing-speed").innerText = val.toFixed(2);
+            const wall = hazards.find(h => h.type === "chasing_wall" && currentLevelIndex === 3);
+            if (wall) wall.vx = val;
+        };
+
+        document.getElementById("dev-slider-launcher-rate").oninput = (e) => {
+            const val = parseInt(e.target.value);
+            devSettings.launcherFireRate = val;
+            document.getElementById("dev-val-launcher-rate").innerText = val;
+            hazards.forEach(h => { if (h.type === "launcher") h.fireRate = val; });
+        };
+
+        document.getElementById("dev-slider-bug-speed").oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            devSettings.bugWallSpeed = val;
+            document.getElementById("dev-val-bug-speed").innerText = val.toFixed(1);
+            hazards.forEach(h => { if (h.type === "bug_wall") h.vy = val * Math.sign(h.vy); });
+        };
+
+        document.getElementById("dev-slider-l5-laser-max").oninput = (e) => {
+            const val = parseInt(e.target.value);
+            devSettings.level5LaserMaxX = val;
+            document.getElementById("dev-val-l5-laser-max").innerText = val + "px";
+            const laser = hazards.find(h => h.type === "moving_laser" && currentLevelIndex === 5);
+            if (laser) laser.maxX = val;
+        };
+
+        // UI 文本更新
+        function updateUI() {
+            const data = i18n[currentLang] || i18n['en'];
+            
+            document.getElementById("ui-title").innerText = data.title;
+            document.getElementById("ui-badge").innerText = data.badge;
+            document.getElementById("ui-subtitle").innerText = data.subtitle;
+            document.getElementById("ui-deaths-label").innerText = data.deathsLabel;
+            document.getElementById("ui-level-label").innerText = data.levelLabel;
+            document.getElementById("btn-slow").innerText = data.slowBtn;
+            document.getElementById("ctrl-jump").innerText = data.jumpBtn;
+            document.getElementById("btn-shop").innerText = data.shopBtn.replace("{deaths}", deaths);
+            document.getElementById("time-dilation-badge").innerText = data.slowModeActive;
+            document.getElementById("current-lang-name").innerText = langNames[currentLang];
+
+            if (gameMode === 'versus') {
+                document.getElementById("vs-scoreboard").className = "flex justify-between items-center bg-slate-900/80 border border-slate-800 px-4 py-2 rounded-lg text-sm md:text-base font-bold shadow-inner";
+                document.getElementById("p1-score").className = "text-xl text-white font-black";
+                document.getElementById("p2-score").className = "text-xl text-white font-black";
+                document.getElementById("p1-score").innerText = p1Score;
+                document.getElementById("p2-score").innerText = p2Score;
+                document.getElementById("ui-vs-tip").innerText = currentLang === 'zh' ? '⚔️ 同屏激烈竞速中 / RACING' : '⚔️ 2P RACING DUEL';
+            } else if (gameMode === 'coop') {
+                document.getElementById("vs-scoreboard").className = "flex justify-between items-center bg-emerald-950/40 border border-emerald-800/50 px-4 py-2 rounded-lg text-sm md:text-base font-bold shadow-inner";
+                document.getElementById("ui-vs-tip").innerText = data.coopRacing;
+                
+                const p1Status = player1.reachedPortal ? data.coopStatusReady : data.coopStatusGoing;
+                const p2Status = player2.reachedPortal ? data.coopStatusReady : data.coopStatusGoing;
+                
+                document.getElementById("p1-score").className = "text-sm font-medium text-pink-300";
+                document.getElementById("p2-score").className = "text-sm font-medium text-cyan-300";
+                document.getElementById("p1-score").innerText = p1Status;
+                document.getElementById("p2-score").innerText = p2Status;
+            }
+
+            if (gameMode === 'single') {
+                document.getElementById("btn-mode").innerText = data.modeSingle;
+            } else if (gameMode === 'versus') {
+                document.getElementById("btn-mode").innerText = data.modeVersus;
+            } else {
+                document.getElementById("btn-mode").innerText = data.modeCoop;
+            }
+
+            document.getElementById("t-badge").innerText = data.tutorialBadge;
+            document.getElementById("t-title").innerText = data.tutorialTitle;
+            document.getElementById("t-content").innerHTML = data.tutorialContent;
+            document.getElementById("btn-start-tutorial").innerText = data.tutorialConfirm;
+
+            document.getElementById("shop-title").innerText = data.shopTitle;
+            document.getElementById("shop-subtitle").innerText = data.shopSubtitle;
+            document.getElementById("btn-close-shop").innerText = data.closeShop;
+            document.getElementById("shop-error").innerText = data.shopTip;
+
+            const itemsContainer = document.getElementById("shop-items-container");
+            itemsContainer.innerHTML = "";
+            const prices = ["$99,999", "$45,000", "$999,999"];
+            data.shopItems.forEach((item, idx) => {
+                itemsContainer.innerHTML += `
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-white">${item.name}</div>
+                            <div class="text-xs text-gray-400">${item.desc}</div>
+                        </div>
+                        <button class="buy-item bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded font-bold text-xs transition-colors" onclick="triggerCheat(${idx})">
+                            ${prices[idx]}
+                        </button>
+                    </div>
+                `;
+            });
+
+            const p2ControlsDiv = document.getElementById("p2-controls");
+            if (gameMode !== 'single') {
+                p2ControlsDiv.classList.remove("hidden");
+                p2ControlsDiv.classList.add("flex");
+            } else {
+                p2ControlsDiv.classList.remove("flex");
+                p2ControlsDiv.classList.add("hidden");
+            }
+
+            const lvl = levels[currentLevelIndex];
+            const name = (currentLang === 'zh') ? lvl.nameZh : lvl.nameEn;
+            document.getElementById("level-title").innerText = `${currentLevelIndex} / ${levels.length - 1} : ${name}`;
+
+            const lvlQuotes = levelQuotes[currentLevelIndex]?.[currentLang] || ["..."];
+            document.getElementById("narrator-bubble").innerText = `“ ${lvlQuotes[Math.floor(globalTimer / 120) % lvlQuotes.length || 0]} ”`;
+        }
+
+        function isQuantumVisible(element) {
+            if (!element.quantum) return true;
+            const dist1 = Math.hypot((element.x + element.w/2) - (player1.x + player1.width/2), (element.y + element.h/2) - (player1.y + player1.height/2));
+            const dist2 = (gameMode !== 'single') ? Math.hypot((element.x + element.w/2) - (player2.x + player2.width/2), (element.y + element.h/2) - (player2.y + player2.height/2)) : 9999;
+            return (!player1.isDead && dist1 < 140) || ((gameMode !== 'single') && !player2.isDead && dist2 < 140);
+        }
+
+        // 精简AABB
+        function checkCollision(r1, r2) {
+            return r1.x < r2.x + r2.w &&
+                   r1.x + r1.width > r2.x &&
+                   r1.y < r2.y + r2.h &&
+                   r1.y + r1.height > r2.y;
+        }
+
+        // 粒子池优化
+        function addParticle(p) {
+            if (particles.length >= MAX_PARTICLES) {
+                particles.shift(); 
+            }
+            particles.push(p);
+        }
+
+        function spawnTrailParticles(x, y, color) {
+            if (Math.random() > 0.4) return;
+            addParticle({
+                x: x + 15 + (Math.random() - 0.5)*10,
+                y: y + 15 + (Math.random() - 0.5)*10,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2,
+                size: Math.random() * 4 + 2,
+                color: color,
+                alpha: 1.0,
+                decay: 0.03 + Math.random() * 0.03
+            });
+        }
+
+        function explodePlayer(x, y, color) {
+            for(let i=0; i<25; i++) {
+                addParticle({
+                    x: x + 15,
+                    y: y + 15,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12 - 2,
+                    size: Math.random() * 6 + 3,
+                    color: color,
+                    alpha: 1.0,
+                    decay: 0.02
+                });
+            }
+        }
+
+        function killPlayer(p, messageCode) {
+            if (p.isDead || p.reachedPortal || p.isInvincible) return; 
+            if (currentLevelIndex === 0) return; 
+
+            p.isDead = true;
+            p.respawnTimer = 48; 
+            deaths++;
+            document.getElementById("death-counter").innerText = deaths;
+            
+            const shopBtn = document.getElementById("btn-shop");
+            if (shopBtn) {
+                shopBtn.innerText = i18n[currentLang].shopBtn.replace("{deaths}", deaths);
+            }
+            
+            playSound('die');
+            explodePlayer(p.x, p.y, p.color);
+            screenShake = 15 * shakeMultiplier; 
+
+            const data = i18n[currentLang];
+            const reason = data[messageCode] || messageCode;
+            const lvlQuotes = levelQuotes[currentLevelIndex]?.[currentLang] || ["..."];
+            const randomQuote = lvlQuotes[Math.floor(Math.random() * lvlQuotes.length)];
+            
+            const playerPrefix = (gameMode !== 'single') ? `[P${p.id}] ` : '';
+            document.getElementById("narrator-bubble").innerText = `“ ${playerPrefix}${randomQuote} ” (${reason})`;
+        }
+
+        function respawnPlayer(p) {
+            p.isDead = false;
+            p.vx = 0; p.vy = 0;
+            p.reachedPortal = false;
+            if (p.id === 1) p1DraggingPointerId = null;
+            if (p.id === 2) p2DraggingPointerId = null;
+
+            const lvl = levels[currentLevelIndex];
+            p.x = lvl.startPos.x + (gameMode !== 'single' ? (p.id === 1 ? -15 : 15) : 0);
+            p.y = lvl.startPos.y;
+            p.gravityInvert = false;
+            
+            const devFlipCheck = document.getElementById("dev-flip-control");
+            p.controlFlip = devFlipCheck ? devFlipCheck.checked || (currentLevelIndex === 6) : (currentLevelIndex === 6);
+
+            if (currentLevelIndex === 3) {
+                const wall = hazards.find(h => h.type === "chasing_wall");
+                if (wall) wall.x = -50; 
+            }
+            updateUI();
+        }
+
+        function advanceToNextLevel() {
+            currentLevelIndex++;
+            if (currentLevelIndex >= levels.length) {
+                triggerGameWin();
+            } else {
+                respawnPlayer(player1);
+                respawnPlayer(player2);
+                buildLevel(currentLevelIndex);
+            }
+        }
+
+        // 默认的基础关卡集
+        const levels = [
+            {
+                nameZh: "0. 萌新安全区 (Practice Safehouse)", nameEn: "0. Rookie Safety Safehouse",
+                color: "#06b6d4", startPos: { x: 80, y: 390 },
+                setup: () => {
+                    obstacles.push({ x: 0, y: 480, w: 960, h: 60, type: "solid" }); 
+                    obstacles.push({ x: 300, y: 410, w: 100, h: 70, type: "solid" }); 
+                    hazards.push({ x: 600, y: 440, w: 60, h: 40, type: "practice_spring" }); 
+                    portals.push({ x: 880, y: 380, w: 40, h: 100, triggered: false }); 
+                }
+            },
+            {
+                nameZh: "1. 虚假的希望 (False Hope)", nameEn: "1. False Hope (Deceptive)",
+                color: "#10b981", startPos: { x: 80, y: 390 },
+                setup: () => {
+                    obstacles.push({ x: 0, y: 480, w: 960, h: 60, type: "solid" }); 
+                    obstacles.push({ x: 400, y: 360, w: 150, h: 40, type: "solid" }); 
+                    hazards.push({ x: 400, y: 450, w: 180, h: 30, type: "spikes_up" }); 
+                    hazards.push({ x: 220, y: 450, w: 60, h: 30, type: "spikes_up" }); 
+                    hazards.push({ x: 380, y: 40, w: 200, h: 40, type: "spikes_down" }); 
+                    portals.push({ x: 880, y: 380, w: 40, h: 100, triggered: false }); 
+
+                    hazards.push({ x: 740, y: -60, w: 60, h: 100, type: "spikes", dynamic: true, vy: 0, targetY: 380 }); 
+                    triggers.push({
+                        x: 610, y: 140, w: 10, h: 340, activated: false, action: () => {
+                            const spike = hazards.find(h => h.dynamic);
+                            if (spike) spike.vy = 28; 
+                        }
+                    });
+                }
+            },
+            {
+                nameZh: "2. 重力背叛 [支持拖动 + 移动横扫激光]", nameEn: "2. Gravity Betrayal [Drag + Sweeping Laser]",
+                color: "#3b82f6", startPos: { x: 50, y: 420 },
+                setup: () => {
+                    obstacles.push({ x: 0, y: 520, w: 960, h: 20, type: "solid" }); 
+                    obstacles.push({ x: 0, y: 40, w: 960, h: 60, type: "solid" }); 
+                    obstacles.push({ x: 220, y: 340, w: 180, h: 40, type: "solid" }); 
+                    obstacles.push({ x: 520, y: 180, w: 180, h: 40, type: "solid" }); 
+
+                    hazards.push({ x: 240, y: 440, w: 140, h: 40, type: "spikes_up" }); 
+                    hazards.push({ x: 540, y: 100, w: 140, h: 40, type: "spikes_down" }); 
+
+                    hazards.push({
+                        x: 480, y: 100, w: 8, h: 1000,
+                        type: "moving_laser",
+                        vx: devSettings.laserSpeed, 
+                        minX: 480 - devSettings.laserSpread,
+                        maxX: 480 + devSettings.laserSpread
+                    });
+
+                    triggers.push({
+                        x: 430, y: 100, w: 30, h: 380, activated: false, isPortalGlow: true, action: (p) => {
+                            p.gravityInvert = !p.gravityInvert;
+                            playSound('jump');
+                        }
+                    });
+
+                    triggers.push({
+                        x: 730, y: 100, w: 30, h: 380, activated: false, isPortalGlow: true, action: (p) => {
+                            p.gravityInvert = !p.gravityInvert;
+                            playSound('jump');
+                        }
+                    });
+
+                    portals.push({ x: 880, y: 380, w: 40, h: 100, triggered: false });
+                }
+            },
+            {
+                nameZh: "3. 念力迷宫 [拖拽微操 + 极速逼近死光墙]", nameEn: "3. Mental Maze [Drag Control + Chasing Laser Wall]",
+                color: "#a855f7", startPos: { x: 80, y: 290 },
+                setup: () => {
+                    obstacles.push({ x: 0, y: 40, w: 960, h: 40, type: "solid" }); 
+                    obstacles.push({ x: 0, y: 520, w: 960, h: 20, type: "solid" }); 
+
+                    obstacles.push({ x: 200, y: 80, w: 40, h: 320, type: "solid" }); 
+                    obstacles.push({ x: 400, y: 220, w: 40, h: 300, type: "solid" }); 
+                    obstacles.push({ x: 600, y: 80, w: 40, h: 320, type: "solid" }); 
+                    obstacles.push({ x: 750, y: 220, w: 40, h: 300, type: "solid" }); 
+
+                    hazards.push({ x: 240, y: 480, w: 160, h: 40, type: "spikes_up" }); 
+                    hazards.push({ x: 440, y: 80, w: 160, h: 40, type: "spikes_down" }); 
+                    hazards.push({ x: 640, y: 480, w: 110, h: 40, type: "spikes_up" }); 
+
+                    hazards.push({ x: 240, y: 160, w: 160, h: 10, type: "laser", laserActive: true, timer: 0, cycle: 70 });
+                    hazards.push({ x: 640, y: 320, w: 110, h: 10, type: "laser", laserActive: false, timer: 35, cycle: 70 });
+
+                    hazards.push({
+                        x: -50, y: 80, w: 15, h: 440,
+                        type: "chasing_wall", vx: devSettings.chasingWallSpeed 
+                    });
+
+                    portals.push({ x: 880, y: 260, w: 40, h: 100, triggered: false }); 
+                }
+            },
+            {
+                nameZh: "4. 量子陷阱 [双制导火炮 + 真假传送门]", nameEn: "4. Quantum Trap [Dual Rockets + Portal Decoys]",
+                color: "#e11d48", startPos: { x: 50, y: 440 },
+                setup: () => {
+                    obstacles.push({ x: 0, y: 520, w: 960, h: 20, type: "solid" }); 
+
+                    obstacles.push({ x: 240, y: 390, w: 150, h: 30, type: "solid", quantum: true }); 
+                    obstacles.push({ x: 480, y: 290, w: 150, h: 30, type: "solid", quantum: true }); 
+                    obstacles.push({ x: 700, y: 390, w: 150, h: 30, type: "solid", quantum: true }); 
+
+                    hazards.push({ x: 300, y: 480, w: 200, h: 40, type: "spikes", quantum: true }); 
+                    hazards.push({ x: 600, y: 480, w: 150, h: 40, type: "spikes", quantum: true }); 
+
+                    hazards.push({ x: 900, y: 100, w: 30, h: 30, type: "launcher", cooldown: 0, fireRate: devSettings.launcherFireRate });
+                    hazards.push({ x: 900, y: 300, w: 30, h: 30, type: "launcher", cooldown: Math.floor(devSettings.launcherFireRate / 2), fireRate: devSettings.launcherFireRate });
+
+                    portals.push({ x: 880, y: 420, w: 40, h: 100, triggered: false, runaway: true, hasEscaped: false });
+                    portals.push({ x: 540, y: 160, w: 30, h: 70, fake: true, triggered: false });
+                }
+            },
+            {
+                nameZh: "5. 夺命按钮 [开关地狱 + 终极套路]", nameEn: "5. Deadly Buttons [Button Puzzle + Extreme Troll]",
+                color: "#f59e0b", startPos: { x: 80, y: 420 },
+                setup: () => {
+                    gateOpened = false;
+                    obstacles.push({ x: 0, y: 520, w: 960, h: 20, type: "solid" }); 
+                    obstacles.push({ x: 380, y: 410, w: 200, h: 40, type: "solid" }); 
+                    hazards.push({ x: 380, y: 480, w: 200, h: 40, type: "spikes_up" }); 
+
+                    obstacles.push({ x: 840, y: 420, w: 20, h: 100, type: "gate" }); 
+                    portals.push({ x: 880, y: 420, w: 40, h: 100, triggered: false }); 
+
+                    triggers.push({
+                        x: 180, y: 500, w: 40, h: 20, type: "button", label: "A", activated: false,
+                        action: () => {
+                            playSound('spring');
+                            screenShake = 22 * shakeMultiplier;
+                            for (let i = 0; i < 4; i++) {
+                                hazards.push({
+                                    x: 150 + i * 40, y: -60 - i * 30, w: 40, h: 40, 
+                                    type: "spikes", dynamic: true, vy: 14 + i, targetY: 480 
+                                });
+                            }
+                        }
+                    });
+
+                    triggers.push({
+                        x: 460, y: 390, w: 40, h: 20, type: "button", label: "B", activated: false,
+                        action: () => {
+                            if (!gateOpened) {
+                                gateOpened = true;
+                                playSound('win');
+                                hazards.push({
+                                    x: 300, y: 160, w: 10, h: 360, 
+                                    type: "moving_laser", vx: 3, minX: 100, maxX: devSettings.level5LaserMaxX 
+                                });
+                            }
+                        }
+                    });
+
+                    triggers.push({
+                        x: 720, y: 500, w: 40, h: 20, type: "button", label: "C", activated: false,
+                        action: () => {
+                            playSound('spring');
+                            hazards.push({
+                                x: 900, y: 200, w: 30, h: 30, 
+                                type: "launcher", cooldown: 0, fireRate: 60
+                            });
+                        }
+                    });
+                }
+            },
+            {
+                nameZh: "6. 终极崩溃 [方向混乱 + 移动乱码墙]", nameEn: "6. Ultimate Crash [Flipped Control + Moving Bug Walls]",
+                color: "#f43f5e", startPos: { x: 50, y: 460 },
+                setup: () => {
+                    player1.controlFlip = true; 
+                    player2.controlFlip = true; 
+                    obstacles.push({ x: 0, y: 520, w: 960, h: 20, type: "solid" }); 
+                    obstacles.push({ x: 200, y: 410, w: 120, h: 30, type: "solid" }); 
+                    obstacles.push({ x: 400, y: 320, w: 120, h: 30, type: "solid" }); 
+                    obstacles.push({ x: 620, y: 240, w: 120, h: 30, type: "solid" }); 
+
+                    hazards.push({ x: 150, y: 480, w: 700, h: 40, type: "spikes_up" }); 
+
+                    hazards.push({
+                        x: 320, y: 140, w: 40, h: 140, 
+                        type: "bug_wall", vy: devSettings.bugWallSpeed, minY: 100, maxY: 360  
+                    });
+                    hazards.push({
+                        x: 540, y: 240, w: 40, h: 140, 
+                        type: "bug_wall", vy: -devSettings.bugWallSpeed, minY: 100, maxY: 360  
+                    });
+
+                    portals.push({ x: 880, y: 420, w: 40, h: 100, triggered: false }); 
+                    startGlitchSpawner();
+                }
+            },
+            // 关卡第 7 个元素，专门作为用户编辑器加载游玩运行的 Sandbox
+            {
+                nameZh: "🛠️ 自定义沙盒关卡 (Custom Sandbox)", nameEn: "🛠️ Sandbox Level",
+                color: "#10b981", startPos: { x: 80, y: 420 },
+                setup: () => {
+                    // 读取编辑器数据
+                    customMapElements.forEach(item => {
+                        if (item.type === "solid") {
+                            obstacles.push({ x: item.x, y: item.y, w: item.w, h: item.h, type: "solid" });
+                        } else if (item.type === "portal") {
+                            portals.push({ x: item.x, y: item.y, w: item.w, h: item.h, triggered: false });
+                        } else {
+                            hazards.push({ x: item.x, y: item.y, w: item.w, h: item.h, type: item.type });
+                        }
+                    });
+                    
+                    // 地面安全冗余（若未画地基，自动放置基础平台防跌落死锁）
+                    if (!customMapElements.some(e => e.type === "solid" && e.y >= 460)) {
+                        obstacles.push({ x: 0, y: 520, w: 960, h: 20, type: "solid" });
+                    }
+                }
+            }
+        ];
+
+        function buildLevel(index) {
+            obstacles = [];
+            triggers = [];
+            portals = [];
+            hazards = [];
+            clearGlitches();
+            
+            levels[index].setup();
+            
+            player1.reachedPortal = false;
+            player2.reachedPortal = false;
+            updateUI();
+        }
+
+        let glitchTimer = null;
+        function startGlitchSpawner() {
+            clearGlitches();
+            glitchTimer = setInterval(() => {
+                if (currentLevelIndex !== 6 || (player1.isDead && player2.isDead)) return;
+                createGlitchPopup();
+            }, 2500); 
+        }
+
+        function clearGlitches() {
+            if (glitchTimer) { clearInterval(glitchTimer); glitchTimer = null; }
+            document.getElementById("popup-overlay").innerHTML = "";
+        }
+
+        function createGlitchPopup() {
+            const overlay = document.getElementById("popup-overlay");
+            const containerRect = document.getElementById("canvas-container").getBoundingClientRect();
+
+            const popup = document.createElement("div");
+            popup.className = "fake-popup pointer-events-auto shadow-2xl animate-pulse";
+            
+            const x = Math.random() * (containerRect.width - 240);
+            const y = Math.random() * (containerRect.height - 185);
+            popup.style.left = `${x}px`;
+            popup.style.top = `${y}px`;
+
+            const pool = glitchPools[currentLang] || glitchPools['en'];
+            const content = pool[Math.floor(Math.random() * pool.length)];
+
+            const buttonTexts = { zh: "我知道我菜，关掉吧", en: "Yeah, I suck, dismiss" };
+            const headerTexts = { zh: "⚠️ 警告 - 系统致命异常", en: "⚠️ Warning - Fatal Failure" };
+
+            popup.innerHTML = `
+                <div class="fake-popup-header">
+                    <span>${headerTexts[currentLang] || headerTexts['en']}</span>
+                    <button class="close-popup-btn text-white bg-red-600 hover:bg-red-500 px-1 text-xs">X</button>
+                </div>
+                <div class="fake-popup-body">
+                    <p class="font-bold mb-2 text-red-600">${content.t}</p>
+                    <p class="text-[10px] text-gray-700 leading-tight mb-3">${content.d}</p>
+                    <button class="fake-btn w-full close-popup-btn py-1 font-bold">${buttonTexts[currentLang] || buttonTexts['en']}</button>
+                </div>
+            `;
+
+            const closeBtns = popup.querySelectorAll(".close-popup-btn");
+            closeBtns.forEach(btn => {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    playSound('click');
+                    popup.remove();
+                    if (Math.random() < 0.45) { 
+                        const target = (!player1.isDead && Math.random() < 0.5) ? player1 : (!player2.isDead ? player2 : player1);
+                        killPlayer(target, "deathReasonPop");
+                    }
+                };
+            });
+
+            overlay.appendChild(popup);
+        }
+
+        // 缩放坐标映射
+        function getLogicCoords(e, touchObj) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = touchObj ? touchObj.clientX : e.clientX;
+            const clientY = touchObj ? touchObj.clientY : e.clientY;
+            const w = rect.width || 1;
+            const h = rect.height || 1;
+            const x = ((clientX - rect.left) / w) * LOGIC_WIDTH;
+            const y = ((clientY - rect.top) / h) * LOGIC_HEIGHT;
+            return { x, y };
+        }
+
+        // 处理编辑器及游玩双模态 Pointer/Touch 事件
+        function handleStart(e) {
+            const coords = getLogicCoords(e, e.touches ? e.touches[0] : null);
+
+            // 如果是地图编辑器模式，则记录拖拽的起始坐标
+            if (isEditorMode) {
+                if (e.cancelable) e.preventDefault();
+                playSound('click');
+                
+                // 如果是鼠标右键 (Button 2)，删除点击中的元件
+                if (e.button === 2) {
+                    deleteElementAt(coords.x, coords.y);
+                    return;
+                }
+
+                editorDragStart = { x: Math.round(coords.x), y: Math.round(coords.y) };
+                return;
+            }
+
+            // 否则执行常规拖拽小块逃生判定
+            if (currentLevelIndex !== 0 && currentLevelIndex !== 2 && currentLevelIndex !== 3) return;
+            
+            const touches = e.touches ? e.touches : [e];
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                const tCoords = getLogicCoords(e, e.touches ? touch : null);
+                const pointerId = e.touches ? touch.identifier : "mouse";
+
+                const dist1 = Math.hypot(tCoords.x - (player1.x + player1.width/2), tCoords.y - (player1.y + player1.height/2));
+                const dist2 = (gameMode !== 'single') ? Math.hypot(tCoords.x - (player2.x + player2.width/2), tCoords.y - (player2.y + player2.height/2)) : 9999;
+
+                if (!player1.isDead && !player1.reachedPortal && dist1 < 60 && p1DraggingPointerId === null) {
+                    p1DraggingPointerId = pointerId;
+                    player1.vx = 0; player1.vy = 0;
+                    if (e.cancelable) e.preventDefault();
+                } else if ((gameMode !== 'single') && !player2.isDead && !player2.reachedPortal && dist2 < 60 && p2DraggingPointerId === null) {
+                    p2DraggingPointerId = pointerId;
+                    player2.vx = 0; player2.vy = 0;
+                    if (e.cancelable) e.preventDefault();
+                }
+            }
+        }
+
+        function handleMove(e) {
+            const coords = getLogicCoords(e, e.touches ? e.touches[0] : null);
+            editorMousePos = coords;
+
+            if (isEditorMode) {
+                if (e.cancelable) e.preventDefault();
+                return;
+            }
+
+            if (currentLevelIndex !== 0 && currentLevelIndex !== 2 && currentLevelIndex !== 3) return;
+            
+            const touches = e.touches ? e.touches : [e];
+            for (let i = 0; i < touches.length; i++) {
+                const touch = touches[i];
+                const tCoords = getLogicCoords(e, e.touches ? touch : null);
+                const pointerId = e.touches ? touch.identifier : "mouse";
+
+                if (p1DraggingPointerId === pointerId && !player1.isDead && !player1.reachedPortal) {
+                    if (e.cancelable) e.preventDefault();
+                    dragPlayerTo(player1, tCoords);
+                }
+                if (p2DraggingPointerId === pointerId && (gameMode !== 'single') && !player2.isDead && !player2.reachedPortal) {
+                    if (e.cancelable) e.preventDefault();
+                    dragPlayerTo(player2, tCoords);
+                }
+            }
+        }
+
+        function handleEnd(e) {
+            if (isEditorMode) {
+                // 如果存在编辑画框，拉起释放生成元件
+                if (editorDragStart && editorMousePos) {
+                    const coords = getLogicCoords(e, e.changedTouches ? e.touches[0] : null);
+                    const x1 = editorDragStart.x;
+                    const y1 = editorDragStart.y;
+                    const x2 = Math.round(editorMousePos.x);
+                    const y2 = Math.round(editorMousePos.y);
+
+                    const rx = Math.min(x1, x2);
+                    const ry = Math.min(y1, y2);
+                    let rw = Math.abs(x2 - x1);
+                    let rh = Math.abs(y2 - y1);
+
+                    // 最小绘制单元阀值限制，防止手抖误触
+                    if (rw < 10) rw = 15;
+                    if (rh < 10) rh = 15;
+
+                    customMapElements.push({
+                        type: selectedEditorTool,
+                        x: rx, y: ry, w: rw, h: rh
+                    });
+                    
+                    playSound('click');
+                    editorDragStart = null;
+                }
+                return;
+            }
+
+            if (e.touches) {
+                const activeIds = Array.from(e.touches).map(t => t.identifier);
+                if (p1DraggingPointerId !== null && !activeIds.includes(p1DraggingPointerId)) p1DraggingPointerId = null;
+                if (p2DraggingPointerId !== null && !activeIds.includes(p2DraggingPointerId)) p2DraggingPointerId = null;
+            } else {
+                p1DraggingPointerId = null;
+                p2DraggingPointerId = null;
+            }
+        }
+
+        // 地图编辑器内通过右键点击删除特定元件的功能
+        function deleteElementAt(x, y) {
+            for (let i = customMapElements.length - 1; i >= 0; i--) {
+                const item = customMapElements[i];
+                if (x >= item.x && x <= item.x + item.w && y >= item.y && y <= item.y + item.h) {
+                    customMapElements.splice(i, 1);
+                    playSound('die');
+                    showToast("元件已删除 / Removed element");
+                    return;
+                }
+            }
+        }
+
+        // 精细物理拖拽，避开隧道穿墙
+        function dragPlayerTo(p, coords) {
+            let targetX = coords.x - p.width / 2;
+            let targetY = coords.y - p.height / 2;
+
+            if (targetX < 0) targetX = 0;
+            if (targetX + p.width > LOGIC_WIDTH) targetX = LOGIC_WIDTH - p.width;
+            if (targetY < 0) targetY = 0;
+            if (targetY + p.height > LOGIC_HEIGHT) targetY = LOGIC_HEIGHT - p.height;
+
+            let startX = p.x;
+            let startY = p.y;
+            let dx = targetX - startX;
+            let dy = targetY - startY;
+            
+            let steps = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)));
+            if (steps > 0) {
+                let stepX = dx / steps;
+                let stepY = dy / steps;
+                
+                for (let i = 0; i < steps; i++) {
+                    let nextX = startX + stepX;
+                    let nextY = startY + stepY;
+                    
+                    let hitX = false;
+                    let testBoxX = { x: nextX, y: startY, width: p.width, height: p.height };
+                    for (let o of obstacles) {
+                        if (o.type === "solid") {
+                            if (o.quantum && !isQuantumVisible(o)) continue;
+                            if (checkCollision(testBoxX, o)) { hitX = true; break; }
+                        }
+                    }
+                    if (!hitX) startX = nextX;
+
+                    let hitY = false;
+                    let testBoxY = { x: startX, y: nextY, width: p.width, height: p.height };
+                    for (let o of obstacles) {
+                        if (o.type === "solid") {
+                            if (o.quantum && !isQuantumVisible(o)) continue;
+                            if (checkCollision(testBoxY, o)) { hitY = true; break; }
+                        }
+                    }
+                    if (!hitY) startY = nextY;
+                    if (hitX && hitY) break; 
+                }
+                p.x = startX;
+                p.y = startY;
+            }
+            spawnTrailParticles(p.x, p.y, p.color);
+        }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('touchend', handleEnd);
+
+        // 禁止默认右键菜单弹出，保证流畅使用编辑器右键删除元件
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        const keys = {};
+        const mobileButtons = { 
+            left: false, right: false, jump: false,
+            p2Left: false, p2Right: false, p2Jump: false
+        };
+
+        window.addEventListener('keydown', e => {
+            const key = e.key.toLowerCase();
+            keys[key] = true;
+            if (["space", " ", "w", "arrowup"].includes(key)) {
+                e.preventDefault();
+            }
+            if (e.key === "Shift") {
+                toggleSlowMotion();
+            }
+        });
+
+        window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+        function bindPointerControls(btnId, actionKey, isJump = false, player = 1) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.style.touchAction = "none";
+            
+            btn.addEventListener("pointerdown", (e) => {
+                e.preventDefault();
+                try { btn.setPointerCapture(e.pointerId); } catch(err) {}
+                mobileButtons[actionKey] = true;
+                
+                if (isJump) {
+                    const targetPlayer = player === 1 ? player1 : player2;
+                    if (currentLevelIndex !== 2 && currentLevelIndex !== 3 && targetPlayer.grounded && !targetPlayer.isDead && !targetPlayer.reachedPortal) {
+                        const gravityDir = targetPlayer.gravityInvert ? -1 : 1;
+                        targetPlayer.vy = -targetPlayer.jumpForce * gravityDir;
+                        targetPlayer.grounded = false;
+                        playSound('jump');
+                    }
+                }
+            });
+            
+            const releaseHandler = (e) => {
+                e.preventDefault();
+                mobileButtons[actionKey] = false;
+            };
+            btn.addEventListener("pointerup", releaseHandler);
+            btn.addEventListener("pointercancel", releaseHandler);
+        }
+
+        bindPointerControls("ctrl-left", "left", false, 1);
+        bindPointerControls("ctrl-right", "right", false, 1);
+        bindPointerControls("ctrl-jump", "jump", true, 1);
+        bindPointerControls("ctrl-p2-left", "p2Left", false, 2);
+        bindPointerControls("ctrl-p2-right", "p2Right", false, 2);
+        bindPointerControls("ctrl-p2-jump", "p2Jump", true, 2);
+
+        function toggleSlowMotion() {
+            playSound('click');
+            const badge = document.getElementById("time-dilation-badge");
+            if (timeScale === 1.0) {
+                timeScale = 0.4;
+                badge.classList.remove("hidden");
+                document.getElementById("narrator-bubble").innerText = i18n[currentLang].slowNarrator;
+            } else {
+                timeScale = 1.0;
+                badge.classList.add("hidden");
+            }
+        }
+        document.getElementById("btn-slow").onclick = toggleSlowMotion;
+
+        document.getElementById("btn-start-tutorial").onclick = () => {
+            playSound('click');
+            document.getElementById("tutorial-modal").classList.add("hidden");
+        };
+
+        document.getElementById("btn-mode").onclick = switchGameMode;
+
+        const shopModal = document.getElementById("shop-modal");
+        document.getElementById("btn-shop").onclick = () => {
+            playSound('click');
+            document.getElementById("shop-error").innerText = i18n[currentLang].shopTip;
+            document.getElementById("shop-error").className = "bg-red-950/50 border border-red-500/40 text-red-400 text-xs py-2 px-3 rounded-md mb-4 min-h-[36px] flex items-center justify-center font-bold";
+            shopModal.classList.remove("hidden");
+        };
+        document.getElementById("btn-close-shop").onclick = () => {
+            playSound('click');
+            shopModal.classList.add("hidden");
+        };
+
+        function triggerCheat(idx) {
+            playSound('die');
+            const pool = i18n[currentLang].shopErrors;
+            const errBox = document.getElementById("shop-error");
+            errBox.innerText = pool[Math.floor(Math.random() * pool.length)];
+            errBox.className = "bg-red-600 border border-red-400 text-white text-xs py-2 px-3 rounded-md mb-4 min-h-[36px] flex items-center justify-center font-bold animate-bounce";
+            
+            const buyTrollText = {
+                zh: "“ 居然还想买外挂？老老实实凭技术（和命）通关吧！ ”",
+                en: "“ Trying to buy hacks? How about completing it with real skills (and lives)! ”"
+            };
+            document.getElementById("narrator-bubble").innerText = buyTrollText[currentLang] || buyTrollText['en'];
+        }
+
+        let isGameCleared = false;
+        function triggerGameWin() {
+            isGameCleared = true;
+            isRunning = false;
+            playSound('win');
+            ctx.fillStyle = "rgba(0,0,0,0.96)";
+            ctx.fillRect(0, 0, LOGIC_WIDTH, LOGIC_HEIGHT);
+            
+            const data = i18n[currentLang] || i18n['en'];
+            ctx.font = "bold 44px 'ZCOOL ChuanQi', sans-serif";
+            ctx.fillStyle = "#10b981";
+            ctx.textAlign = "center";
+            
+            if (gameMode !== 'single') {
+                let winMsg = "";
+                if (gameMode === 'versus') {
+                    if (p1Score > p2Score) winMsg = data.vsFinalWinP1;
+                    else if (p2Score > p1Score) winMsg = data.vsFinalWinP2;
+                    else winMsg = data.vsFinalTie;
+                    ctx.fillText(winMsg, LOGIC_WIDTH/2, 180);
+                    
+                    ctx.font = "26px 'Share Tech Mono', sans-serif";
+                    ctx.fillStyle = "#ff007f";
+                    ctx.fillText(`Player 1: ${p1Score}`, LOGIC_WIDTH/2 - 150, 260);
+                    ctx.fillStyle = "#00f3ff";
+                    ctx.fillText(`Player 2: ${p2Score}`, LOGIC_WIDTH/2 + 150, 260);
+                } else {
+                    const coopWinText = {
+                        zh: "🤝 完美协作！你们是最强的默契搭档！",
+                        en: "🤝 Perfect Teamwork! You are legendary partners!"
+                    };
+                    ctx.fillText(coopWinText[currentLang] || coopWinText['en'], LOGIC_WIDTH/2, 220);
+                }
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "18px sans-serif";
+                ctx.fillText(data.winFooter, LOGIC_WIDTH/2, 340);
+            } else {
+                ctx.fillText(data.winTitle, LOGIC_WIDTH/2, 220);
+                ctx.font = "20px 'Share Tech Mono', sans-serif";
+                ctx.fillStyle = "#ffffff";
+                ctx.fillText(data.winDeaths.replace("{deaths}", deaths), LOGIC_WIDTH/2, 280);
+                ctx.fillText(data.winFooter, LOGIC_WIDTH/2, 330);
+            }
+        }
+
+        // 引入 DT (Delta Time) 的物理模拟系统
+        function updatePlayerPhysics(p) {
+            if (p.isDead) {
+                p.respawnTimer -= dt * timeScale;
+                if (p.respawnTimer <= 0) respawnPlayer(p);
+                return;
+            }
+
+            if (gameMode === 'coop' && p.reachedPortal) {
+                const port = portals[0];
+                if (port) {
+                    p.x = port.x + port.w/2 - p.width/2;
+                    p.y = port.y + port.h/2 - p.height/2;
+                }
+                p.vx = 0; p.vy = 0; p.grounded = true;
+                return;
+            }
+
+            const isDraggingThis = (p.id === 1 && p1DraggingPointerId !== null) || (p.id === 2 && p2DraggingPointerId !== null);
+            if ((currentLevelIndex === 0 || currentLevelIndex === 2 || currentLevelIndex === 3) && isDraggingThis) {
+                p.vx = 0; p.vy = 0; p.grounded = false;
+                return;
+            }
+
+            let moveLeft = false, moveRight = false, jumpPressed = false;
+
+            if (p.id === 1) {
+                moveLeft = keys['a'] || mobileButtons.left;
+                moveRight = keys['d'] || mobileButtons.right;
+                jumpPressed = keys['w'] || mobileButtons.jump;
+            } else {
+                moveLeft = keys['arrowleft'] || mobileButtons.p2Left;
+                moveRight = keys['arrowright'] || mobileButtons.p2Right;
+                jumpPressed = keys['arrowup'] || mobileButtons.p2Jump;
+            }
+
+            if (p.controlFlip) {
+                const temp = moveLeft; moveLeft = moveRight; moveRight = temp;
+            }
+
+            const stepSpeed = p.speed * dt * timeScale;
+            if (moveLeft) {
+                p.vx = -p.speed;
+            } else if (moveRight) {
+                p.vx = p.speed;
+            } else {
+                p.vx *= Math.pow(0.7, dt * timeScale);
+            }
+
+            const gravityDir = p.gravityInvert ? -1 : 1;
+            p.vy += p.gravity * gravityDir * dt * timeScale;
+
+            const termVelocity = 13;
+            if (Math.abs(p.vy) > termVelocity) p.vy = termVelocity * Math.sign(p.vy);
+
+            p.x += p.vx * dt * timeScale;
+            if (p.x < 0) p.x = 0;
+            if (p.x + p.width > LOGIC_WIDTH) p.x = LOGIC_WIDTH - p.width;
+
+            // X 轴碰撞检测
+            for (let o of obstacles) {
+                if (o.type === "gate" && gateOpened) continue;
+                if (o.type === "solid" || o.type === "gate") {
+                    if (checkCollision(p, o)) {
+                        if (o.quantum && !isQuantumVisible(o)) continue;
+                        if (p.vx > 0) p.x = o.x - p.width;
+                        else if (p.vx < 0) p.x = o.x + o.w;
+                        p.vx = 0;
+                    }
+                }
+            }
+
+            p.y += p.vy * dt * timeScale;
+            p.grounded = false;
+
+            if (p.y < -50 || p.y + p.height > LOGIC_HEIGHT + 50) {
+                killPlayer(p, "deathReasonVoid");
+                return;
+            }
+
+            // Y 轴碰撞检测
+            for (let o of obstacles) {
+                if (o.type === "gate" && gateOpened) continue;
+                if (o.type === "solid" || o.type === "gate") {
+                    if (checkCollision(p, o)) {
+                        if (o.quantum && !isQuantumVisible(o)) continue;
+                        if (gravityDir === 1) { 
+                            if (p.vy > 0) {
+                                p.y = o.y - p.height; p.vy = 0; p.grounded = true;
+                            } else if (p.vy < 0) {
+                                p.y = o.y + o.h; p.vy = 0;
+                            }
+                        } else { 
+                            if (p.vy < 0) {
+                                p.y = o.y + o.h; p.vy = 0; p.grounded = true; 
+                            } else if (p.vy > 0) {
+                                p.y = o.y - p.height; p.vy = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (jumpPressed && p.grounded) {
+                p.vy = -p.jumpForce * gravityDir;
+                p.grounded = false;
+                playSound('jump');
+                p.scaleY = 1.35; p.scaleX = 0.75;
+                if (currentLevelIndex === levels.length - 2) { // 指向崩溃关索引变化
+                    screenShake = 12 * shakeMultiplier; 
+                }
+            }
+
+            p.scaleX += (1 - p.scaleX) * 0.1 * dt;
+            p.scaleY += (1 - p.scaleY) * 0.1 * dt;
+
+            if (Math.abs(p.vx) > 0.1 || Math.abs(p.vy) > 0.1) {
+                spawnTrailParticles(p.x, p.y, p.color);
+            }
+        }
+
+        // 统一的高保真游戏渲染主循环 (包含 编辑器辅助画线指南)
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
+
+            if (!isRunning) return;
+
+            const now = performance.now();
+            const elapsed = now - lastTime;
+            lastTime = now;
+            dt = Math.min(elapsed / 16.666, 4.0); 
+
+            globalTimer += dt * timeScale;
+
+            let shakeX = 0, shakeY = 0;
+            if (screenShake > 0) {
+                shakeX = (Math.random() - 0.5) * screenShake;
+                shakeY = (Math.random() - 0.5) * screenShake;
+                screenShake *= Math.pow(0.9, dt); 
+                if (screenShake < 0.2) screenShake = 0;
+            }
+
+            ctx.save();
+            ctx.translate(Math.round(shakeX), Math.round(shakeY));
+
+            // Background redraw
+            ctx.fillStyle = "#0c0d14";
+            ctx.fillRect(0, 0, LOGIC_WIDTH, LOGIC_HEIGHT);
+
+            // 绘制网格。如果在编辑器模式中，将网格绘制更亮一点方便对齐
+            ctx.strokeStyle = isEditorMode ? "rgba(16, 185, 129, 0.1)" : "rgba(139, 92, 246, 0.05)";
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+            for (let x = 0; x < LOGIC_WIDTH; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, LOGIC_HEIGHT); ctx.stroke();
+            }
+            for (let y = 0; y < LOGIC_HEIGHT; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(LOGIC_WIDTH, y); ctx.stroke();
+            }
+
+            if (currentLevelIndex === 0) {
+                ctx.save();
+                ctx.font = "bold 16px sans-serif";
+                ctx.textAlign = "center";
+                const data = i18n[currentLang] || i18n['en'];
+
+                ctx.fillStyle = "rgba(6, 182, 212, 0.7)";
+                ctx.fillText(data.canvasTestTip, 150, 260);
+                ctx.strokeStyle = "rgba(6, 182, 212, 0.3)";
+                ctx.strokeRect(40, 280, 220, 2);
+
+                ctx.fillStyle = "rgba(168, 85, 247, 0.7)";
+                ctx.fillText(data.canvasJumpTip, 360, 220);
+                ctx.strokeStyle = "rgba(168, 85, 247, 0.3)";
+                ctx.strokeRect(300, 240, 100, 130);
+
+                ctx.fillStyle = "rgba(34, 211, 238, 0.7)";
+                ctx.fillText(data.canvasSlowTip, 560, 290);
+
+                ctx.fillStyle = "rgba(244, 63, 94, 0.7)";
+                ctx.fillText(data.canvasDragTip, 500, 140);
+
+                ctx.fillStyle = "rgba(34, 197, 94, 0.8)";
+                ctx.fillText(data.canvasExitTip, 765, 310);
+                ctx.restore();
+            }
+
+            // 如果是地图编辑器，渲染编辑器独有的交互引导和虚线线索
+            if (isEditorMode) {
+                renderEditorOverlay();
+                ctx.restore();
+                return; // 编辑器下不更新物理引擎，保持纯静态设计空间
+            }
+
+            // 否则，正常进行物理引擎渲染
+            updatePlayerPhysics(player1);
+            if (gameMode !== 'single') {
+                updatePlayerPhysics(player2);
+            }
+
+            // 障碍运动计算
+            for (let h of hazards) {
+                if (h.dynamic) {
+                    h.y += h.vy * dt * timeScale;
+                    if (h.y >= h.targetY) {
+                        h.y = h.targetY; h.vy = 0;
+                    }
+                }
+
+                if (h.type === "laser") {
+                    h.timer += dt * timeScale;
+                    if (h.timer >= h.cycle) {
+                        h.timer = 0; h.laserActive = !h.laserActive;
+                    }
+                }
+
+                if (h.type === "moving_laser") {
+                    h.x += h.vx * dt * timeScale;
+                    if (h.x >= h.maxX || h.x <= h.minX) {
+                        h.vx = -h.vx; 
+                    }
+                }
+
+                if (h.type === "chasing_wall") {
+                    const p1Chased = !player1.isDead && !player1.reachedPortal;
+                    const p2Chased = (gameMode !== 'single') && !player2.isDead && !player2.reachedPortal;
+                    if (p1Chased || p2Chased) {
+                        h.x += h.vx * dt * timeScale;
+                    }
+                    if (p1Chased && player1.x < h.x + h.w) killPlayer(player1, "deathReasonLaserWall");
+                    if (p2Chased && player2.x < h.x + h.w) killPlayer(player2, "deathReasonLaserWall");
+                }
+
+                if (h.type === "bug_wall") {
+                    h.y += h.vy * dt * timeScale;
+                    if (h.y >= h.maxY || h.y <= h.minY) {
+                        h.vy = -h.vy;
+                    }
+                }
+
+                if (h.type === "launcher") {
+                    h.cooldown += dt * timeScale;
+                    const p1Targetable = !player1.isDead && !player1.reachedPortal;
+                    const p2Targetable = (gameMode !== 'single') && !player2.isDead && !player2.reachedPortal;
+                    if (h.cooldown >= h.fireRate && (p1Targetable || p2Targetable)) {
+                        h.cooldown = 0;
+                        addParticle({
+                            x: h.x, y: h.y, vx: -4.5, vy: 0, size: 8,
+                            color: "#ef4444", isMissile: true
+                        });
+                        playSound('jump');
+                    }
+                }
+            }
+
+            // 触发器运作
+            for (let t of triggers) {
+                const collidedP1 = !player1.isDead && checkCollision(player1, t);
+                const collidedP2 = (gameMode !== 'single') && !player2.isDead && checkCollision(player2, t);
+
+                if (collidedP1 || collidedP2) {
+                    if (!t.activated) {
+                        t.activated = true;
+                        t.action(collidedP1 ? player1 : player2);
+                    }
+                } else {
+                    t.activated = false;
+                }
+            }
+
+            // 粒子更新
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                if (p.isMissile) {
+                    let targetPlayer = player1;
+                    const p1Targetable = !player1.isDead && !player1.reachedPortal;
+                    const p2Targetable = (gameMode !== 'single') && !player2.isDead && !player2.reachedPortal;
+                    
+                    if (p1Targetable && p2Targetable) {
+                        const d1 = Math.hypot(player1.x - p.x, player1.y - p.y);
+                        const d2 = Math.hypot(player2.x - p.x, player2.y - p.y);
+                        targetPlayer = (d2 < d1) ? player2 : player1;
+                    } else if (p2Targetable) {
+                        targetPlayer = player2;
+                    } else if (p1Targetable) {
+                        targetPlayer = player1;
+                    }
+
+                    const dy = (targetPlayer.y + targetPlayer.height/2) - p.y;
+                    p.vy += Math.sign(dy) * 0.12 * dt * timeScale; 
+                    p.x += p.vx * dt * timeScale;
+                    p.y += p.vy * dt * timeScale;
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(Math.round(p.x), Math.round(p.y), p.size, 0, Math.PI*2);
+                    ctx.fill();
+
+                    if (Math.random() > 0.4) {
+                        addParticle({
+                            x: p.x, y: p.y, vx: Math.random() - 0.5, vy: Math.random() - 0.5,
+                            size: 2, color: "#f97316", alpha: 1, decay: 0.05
+                        });
+                    }
+
+                    const missileRect = { x: p.x - p.size, y: p.y - p.size, width: p.size*2, height: p.size*2 };
+                    if (p1Targetable && checkCollision(player1, missileRect)) {
+                        killPlayer(player1, "deathReasonMissile");
+                        particles.splice(i, 1);
+                    } else if (p2Targetable && checkCollision(player2, missileRect)) {
+                        killPlayer(player2, "deathReasonMissile");
+                        particles.splice(i, 1);
+                    } else if (p.x < -20) {
+                        particles.splice(i, 1);
+                    }
+                } else {
+                    p.x += p.vx * dt * timeScale;
+                    p.y += p.vy * dt * timeScale;
+                    p.alpha -= p.decay * dt * timeScale;
+                    if (p.alpha <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+                    ctx.restore();
+                }
+            }
+
+            // 终点检查
+            for (let port of portals) {
+                if (port.fake) {
+                    if (!player1.isDead && !player1.reachedPortal && checkCollision(player1, port)) killPlayer(player1, "deathReasonTrap");
+                    if ((gameMode !== 'single') && !player2.isDead && !player2.reachedPortal && checkCollision(player2, port)) killPlayer(player2, "deathReasonTrap");
+                    continue;
+                }
+
+                if (port.runaway && !port.hasEscaped) {
+                    const dist1 = Math.hypot((port.x + port.w/2) - (player1.x + player1.width/2), (port.y + port.h/2) - (player1.y + player1.height/2));
+                    const dist2 = (gameMode !== 'single') ? Math.hypot((port.x + port.w/2) - (player2.x + player2.width/2), (port.y + port.h/2) - (player2.y + player2.height/2)) : 9999;
+                    
+                    if ((!player1.isDead && dist1 < 180) || ((gameMode !== 'single') && !player2.isDead && dist2 < 180)) {
+                        port.hasEscaped = true;
+                        port.x = 100; port.y = 420; 
+                        
+                        const escapeTroll = {
+                            zh: "“ 没想到吧？通关门跑回了起点！赶紧原路逃回去吧！ ”",
+                            en: "“ Surprise! The gateway teleported back to the start! Go all the way back! ”"
+                        };
+                        document.getElementById("narrator-bubble").innerText = escapeTroll[currentLang] || escapeTroll['en'];
+                    }
+                }
+                
+                if (gameMode === 'single') {
+                    if (!player1.isDead && checkCollision(player1, port)) {
+                        port.triggered = true; playSound('win'); advanceToNextLevel(); ctx.restore(); return; 
+                    }
+                }
+                
+                if (gameMode === 'versus') {
+                    if (!player1.isDead && checkCollision(player1, port)) {
+                        port.triggered = true; playSound('win'); p1Score++;
+                        document.getElementById("narrator-bubble").innerText = i18n[currentLang].vsScoreP1 || i18n['en'].vsScoreP1;
+                        advanceToNextLevel(); ctx.restore(); return; 
+                    }
+                    if (!player2.isDead && checkCollision(player2, port)) {
+                        port.triggered = true; playSound('win'); p2Score++;
+                        document.getElementById("narrator-bubble").innerText = i18n[currentLang].vsScoreP2 || i18n['en'].vsScoreP2;
+                        advanceToNextLevel(); ctx.restore(); return; 
+                    }
+                }
+
+                if (gameMode === 'coop') {
+                    if (!player1.isDead && !player1.reachedPortal && checkCollision(player1, port)) {
+                        player1.reachedPortal = true; playSound('win'); updateUI();
+                    }
+                    if (!player2.isDead && !player2.reachedPortal && checkCollision(player2, port)) {
+                        player2.reachedPortal = true; playSound('win'); updateUI();
+                    }
+                    if (player1.reachedPortal && player2.reachedPortal) {
+                        port.triggered = true; advanceToNextLevel(); ctx.restore(); return;
+                    }
+                }
+            }
+
+            // 危险物检测
+            if (!player1.isDead && !player1.reachedPortal) {
+                for (let h of hazards) {
+                    if (h.quantum && !isQuantumVisible(h)) continue;
+                    if (h.type === "laser" && !h.laserActive) continue;
+                    
+                    if (h.type === "practice_spring" && checkCollision(player1, h)) {
+                        playSound('spring');
+                        player1.vy = -10; player1.vx = -12; 
+                        player1.scaleY = 0.5; player1.scaleX = 1.6;
+                        screenShake = 4 * shakeMultiplier;
+                        document.getElementById("narrator-bubble").innerText = i18n[currentLang].canvasSpringTip || i18n['en'].canvasSpringTip;
+                        continue;
+                    }
+                    if (checkCollision(player1, h)) killPlayer(player1, "deathReasonSpike");
+                }
+            }
+
+            if ((gameMode !== 'single') && !player2.isDead && !player2.reachedPortal) {
+                for (let h of hazards) {
+                    if (h.quantum && !isQuantumVisible(h)) continue;
+                    if (h.type === "laser" && !h.laserActive) continue;
+                    
+                    if (h.type === "practice_spring" && checkCollision(player2, h)) {
+                        playSound('spring');
+                        player2.vy = -10; player2.vx = -12; 
+                        player2.scaleY = 0.5; player2.scaleX = 1.6;
+                        screenShake = 4 * shakeMultiplier;
+                        document.getElementById("narrator-bubble").innerText = i18n[currentLang].canvasSpringTip || i18n['en'].canvasSpringTip;
+                        continue;
+                    }
+                    if (checkCollision(player2, h)) killPlayer(player2, "deathReasonSpike");
+                }
+            }
+
+            // 绘制物理实体
+            drawActiveElements();
+
+            if (!player1.isDead) drawPlayerEntity(player1);
+            if ((gameMode !== 'single') && !player2.isDead) drawPlayerEntity(player2);
+
+            // 慢时空滤镜
+            if (timeScale < 1.0) {
+                ctx.save();
+                const innerGlow = ctx.createRadialGradient(
+                    LOGIC_WIDTH/2, LOGIC_HEIGHT/2, LOGIC_HEIGHT * 0.3,
+                    LOGIC_WIDTH/2, LOGIC_HEIGHT/2, LOGIC_WIDTH * 0.6
+                );
+                innerGlow.addColorStop(0, "rgba(6, 182, 212, 0)");
+                innerGlow.addColorStop(1, "rgba(6, 182, 212, 0.2)");
+                ctx.fillStyle = innerGlow;
+                ctx.fillRect(0, 0, LOGIC_WIDTH, LOGIC_HEIGHT);
+                ctx.restore();
+            }
+
+            ctx.restore(); 
+        }
+
+        // 地图编辑器画面单独绘制方法
+        function renderEditorOverlay() {
+            // 1. 绘制目前自定义关卡中已放置的所有元件
+            customMapElements.forEach(item => {
+                drawCustomElement(item);
+            });
+
+            // 2. 绘制当前正在按住并拖拽生成的临时预览元件
+            if (editorDragStart && editorMousePos) {
+                const x1 = editorDragStart.x;
+                const y1 = editorDragStart.y;
+                const x2 = Math.round(editorMousePos.x);
+                const y2 = Math.round(editorMousePos.y);
+
+                const rx = Math.min(x1, x2);
+                const ry = Math.min(y1, y2);
+                const rw = Math.abs(x2 - x1);
+                const rh = Math.abs(y2 - y1);
+
+                ctx.save();
+                ctx.fillStyle = "rgba(16, 185, 129, 0.3)";
+                ctx.fillRect(rx, ry, rw, rh);
+                ctx.strokeStyle = "#10b981";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.strokeRect(rx, ry, rw, rh);
+                
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "12px Share Tech Mono";
+                ctx.fillText(`W: ${rw} H: ${rh}`, rx + 5, ry - 5);
+                ctx.restore();
+            }
+
+            // 3. 画出起点和一些贴心的小对齐辅助指南
+            ctx.save();
+            ctx.strokeStyle = "rgba(244, 63, 94, 0.4)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(40, 360, 80, 100);
+            ctx.fillStyle = "rgba(244, 63, 94, 0.8)";
+            ctx.font = "10px sans-serif";
+            ctx.fillText("🏁 玩家出生保护区", 45, 410);
+
+            // 在鼠标浮动十字准星高亮
+            if (editorMousePos) {
+                const mx = Math.round(editorMousePos.x);
+                const my = Math.round(editorMousePos.y);
+                ctx.strokeStyle = "rgba(16, 185, 129, 0.4)";
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(mx, 0); ctx.lineTo(mx, LOGIC_HEIGHT);
+                ctx.moveTo(0, my); ctx.lineTo(LOGIC_WIDTH, my);
+                ctx.stroke();
+
+                ctx.fillStyle = "#10b981";
+                ctx.font = "10px Share Tech Mono";
+                ctx.fillText(`X:${mx} Y:${my}`, mx + 8, my - 8);
+            }
+
+            // 编辑器温馨中文提示
+            ctx.fillStyle = "rgba(16, 185, 129, 0.9)";
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillText("🛠️ 地图编辑中：左键拖拽绘制新元件，右键点击已有元件进行删除", 200, 30);
+            ctx.restore();
+        }
+
+        // 专门绘制自定义元件
+        function drawCustomElement(item) {
+            ctx.save();
+            if (item.type === "solid") {
+                ctx.fillStyle = "#1e1b4b";
+                ctx.fillRect(item.x, item.y, item.w, item.h);
+                ctx.strokeStyle = "#10b981";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(item.x, item.y, item.w, item.h);
+            } else if (item.type === "spikes_up") {
+                ctx.fillStyle = "#ef4444";
+                const spikeW = 15;
+                const spikeNum = Math.ceil(item.w / spikeW);
+                for (let i = 0; i < spikeNum; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(item.x + i * spikeW, item.y + item.h);
+                    ctx.lineTo(item.x + i * spikeW + spikeW/2, item.y);
+                    ctx.lineTo(item.x + (i + 1) * spikeW, item.y + item.h);
+                    ctx.fill();
+                }
+            } else if (item.type === "spikes_down") {
+                ctx.fillStyle = "#f43f5e";
+                const spikeW = 15;
+                const spikeNum = Math.ceil(item.w / spikeW);
+                for (let i = 0; i < spikeNum; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(item.x + i * spikeW, item.y);
+                    ctx.lineTo(item.x + i * spikeW + spikeW/2, item.y + item.h);
+                    ctx.lineTo(item.x + (i + 1) * spikeW, item.y);
+                    ctx.fill();
+                }
+            } else if (item.type === "practice_spring") {
+                ctx.fillStyle = "#06b6d4";
+                const spikeW = 15;
+                const spikeNum = Math.ceil(item.w / spikeW);
+                for (let i = 0; i < spikeNum; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(item.x + i * spikeW, item.y + item.h);
+                    ctx.lineTo(item.x + i * spikeW + spikeW/2, item.y);
+                    ctx.lineTo(item.x + (i + 1) * spikeW, item.y + item.h);
+                    ctx.fill();
+                }
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 9px monospace";
+                ctx.fillText("TEST", item.x + 5, item.y + item.h - 5);
+            } else if (item.type === "portal") {
+                ctx.strokeStyle = "#22c55e"; 
+                ctx.lineWidth = 3;
+                ctx.strokeRect(item.x, item.y, item.w, item.h);
+                ctx.fillStyle = "rgba(16, 185, 129, 0.2)";
+                ctx.fillRect(item.x, item.y, item.w, item.h);
+            }
+            ctx.restore();
+        }
+
+        // 统一提炼绘制普通关卡障碍函数
+        function drawActiveElements() {
+            for (let o of obstacles) {
+                if (o.type === "gate") {
+                    if (gateOpened) continue; 
+                    ctx.save();
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+                    ctx.restore();
+                    continue;
+                }
+
+                const visible = isQuantumVisible(o);
+                if (o.quantum && !visible) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(168, 85, 247, 0.22)";
+                    ctx.setLineDash([4, 4]);
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+                    ctx.restore();
+                    continue;
+                }
+                ctx.fillStyle = o.quantum ? "rgba(168,85,247,0.6)" : "#1e1b4b";
+                ctx.fillRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+                ctx.strokeStyle = levels[currentLevelIndex].color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+            }
+
+            for (let h of hazards) {
+                const visible = isQuantumVisible(h);
+                if (h.quantum && !visible) {
+                    ctx.save();
+                    ctx.strokeStyle = "rgba(239, 68, 68, 0.16)";
+                    ctx.setLineDash([2, 2]);
+                    ctx.strokeRect(Math.round(h.x), Math.round(h.y), h.w, h.h);
+                    ctx.restore();
+                    continue;
+                }
+
+                if (h.type === "spikes" || h.type === "spikes_up" || h.dynamic) {
+                    ctx.fillStyle = "#ef4444";
+                    const spikeW = 15;
+                    const spikeNum = Math.ceil(h.w / spikeW);
+                    for (let i = 0; i < spikeNum; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(Math.round(h.x + i * spikeW), Math.round(h.y + h.h));
+                        ctx.lineTo(Math.round(h.x + i * spikeW + spikeW/2), Math.round(h.y));
+                        ctx.lineTo(Math.round(h.x + (i + 1) * spikeW), Math.round(h.y + h.h));
+                        ctx.fill();
+                    }
+                } else if (h.type === "spikes_down") {
+                    ctx.fillStyle = "#f43f5e";
+                    const spikeW = 15;
+                    const spikeNum = Math.ceil(h.w / spikeW);
+                    for (let i = 0; i < spikeNum; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(Math.round(h.x + i * spikeW), Math.round(h.y));
+                        ctx.lineTo(Math.round(h.x + i * spikeW + spikeW/2), Math.round(h.y + h.h));
+                        ctx.lineTo(Math.round(h.x + (i + 1) * spikeW), Math.round(h.y));
+                        ctx.fill();
+                    }
+                } else if (h.type === "practice_spring") {
+                    ctx.fillStyle = "#06b6d4";
+                    const spikeW = 15;
+                    const spikeNum = Math.ceil(h.w / spikeW);
+                    for (let i = 0; i < spikeNum; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(Math.round(h.x + i * spikeW), Math.round(h.y + h.h));
+                        ctx.lineTo(Math.round(h.x + i * spikeW + spikeW/2), Math.round(h.y));
+                        ctx.lineTo(Math.round(h.x + (i + 1) * spikeW), Math.round(h.y + h.h));
+                        ctx.fill();
+                    }
+                } else if (h.type === "laser" && h.laserActive) {
+                    ctx.strokeStyle = "#f43f5e";
+                    ctx.lineWidth = h.h + Math.sin(globalTimer / 4) * 3;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.round(h.x), Math.round(h.y + h.h/2));
+                    ctx.lineTo(Math.round(h.x + h.w), Math.round(h.y + h.h/2));
+                    ctx.stroke();
+                } else if (h.type === "moving_laser") {
+                    ctx.strokeStyle = "#f43f5e";
+                    ctx.lineWidth = h.w + Math.sin(globalTimer / 3) * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.round(h.x + h.w/2), Math.round(h.y));
+                    ctx.lineTo(Math.round(h.x + h.w/2), Math.round(h.y + h.h));
+                    ctx.stroke();
+                } else if (h.type === "chasing_wall") {
+                    ctx.fillStyle = "rgba(168, 85, 247, 0.4)";
+                    ctx.fillRect(0, Math.round(h.y), Math.round(h.x), h.h); 
+                    ctx.strokeStyle = "#a855f7";
+                    ctx.lineWidth = h.w + Math.sin(globalTimer / 2) * 3;
+                    ctx.beginPath();
+                    ctx.moveTo(Math.round(h.x + h.w/2), Math.round(h.y));
+                    ctx.lineTo(Math.round(h.x + h.w/2), Math.round(h.y + h.h));
+                    ctx.stroke();
+                } else if (h.type === "bug_wall") {
+                    ctx.fillStyle = "rgba(239, 68, 68, 0.9)";
+                    ctx.fillRect(Math.round(h.x), Math.round(h.y), h.w, h.h);
+                    ctx.strokeStyle = "#ffffff";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(Math.round(h.x), Math.round(h.y), h.w, h.h); 
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 10px monospace";
+                    ctx.fillText("BUG", Math.round(h.x + 10), Math.round(h.y + 30));
+                    ctx.fillText("ERR", Math.round(h.x + 10), Math.round(h.y + 70));
+                } else if (h.type === "launcher") {
+                    ctx.fillStyle = "#64748b";
+                    ctx.fillRect(Math.round(h.x), Math.round(h.y), h.w, h.h);
+                    ctx.strokeStyle = "#dc2626";
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(Math.round(h.x), Math.round(h.y), h.w, h.h);
+                }
+            }
+
+            for (let port of portals) {
+                ctx.save();
+                ctx.strokeStyle = port.fake ? "#ef4444" : "#22c55e"; 
+                ctx.lineWidth = 4;
+                ctx.strokeRect(Math.round(port.x), Math.round(port.y), port.w, port.h);
+                ctx.fillStyle = port.fake ? "rgba(239, 68, 68, 0.25)" : "rgba(16, 185, 129, 0.2)";
+                ctx.fillRect(Math.round(port.x), Math.round(port.y), port.w, port.h);
+                ctx.restore();
+            }
+        }
+
+        function drawPlayerEntity(p) {
+            ctx.save();
+            ctx.translate(Math.round(p.x + p.width / 2), Math.round(p.y + p.height / 2));
+            ctx.scale(p.scaleX, p.scaleY);
+
+            if (p.gravityInvert) {
+                ctx.scale(1, -1);
+            }
+
+            const gradient = ctx.createLinearGradient(-p.width/2, -p.height/2, p.width/2, p.height/2);
+            gradient.addColorStop(0, p.color);
+            gradient.addColorStop(1, "#3b82f6");
+            ctx.fillStyle = gradient;
+            
+            ctx.beginPath();
+            const r = 4; 
+            const w = p.width;
+            const h = p.height;
+            ctx.roundRect(-w/2, -h/2, w, h, r);
+            ctx.fill();
+
+            if (p.isInvincible) {
+                ctx.strokeStyle = "#ef4444";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(-w/2 - 2, -h/2 - 2, w + 4, h + 4);
+            }
+
+            const eyeW = w * 0.2;
+            const eyeH = h * 0.2;
+            const eyeOffset = w * 0.26;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(-eyeOffset - eyeW/2, -eyeH, eyeW, eyeH);
+            ctx.fillRect(eyeOffset - eyeW/2, -eyeH, eyeW, eyeH);
+            
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(-eyeOffset - eyeW/4, -eyeH * 0.8, eyeW/2, eyeH/2);
+            ctx.fillRect(eyeOffset - eyeW/4, -eyeH * 0.8, eyeW/2, eyeH/2);
+
+            if (gameMode === 'coop' && p.reachedPortal) {
+                ctx.fillStyle = "#10b981";
+                ctx.font = "bold 14px Arial";
+                ctx.fillText("✓", -5, -16);
+            }
+
+            ctx.restore();
+        }
+
+        // 地图编辑器相关的 UI 交互绑定
+        const editorPanel = document.getElementById("editor-tools-panel");
+        const editorToggleBtn = document.getElementById("btn-editor-toggle");
+
+        editorToggleBtn.onclick = () => {
+            playSound('click');
+            isEditorMode = !isEditorMode;
+            if (isEditorMode) {
+                editorToggleBtn.className = "bg-emerald-500 text-slate-950 border-2 border-emerald-300 px-3 py-1 rounded-md font-bold transition-all animate-pulse";
+                editorPanel.classList.remove("hidden");
+                // 自动拉高死亡黑市，留出编辑空间
+                clearGlitches();
+                showToast("您已开启地图编辑器！拖拽画图吧。");
+            } else {
+                exitEditor();
+            }
+        };
+
+        // 元件工具点选
+        const toolBtns = document.querySelectorAll(".editor-tool-btn");
+        toolBtns.forEach(btn => {
+            btn.onclick = () => {
+                playSound('click');
+                toolBtns.forEach(b => b.className = "editor-tool-btn px-2.5 py-1 text-xs bg-slate-900 border border-slate-700 rounded hover:border-emerald-400 transition-all font-bold");
+                btn.className = "editor-tool-btn px-2.5 py-1 text-xs bg-emerald-500 border border-emerald-300 rounded font-bold text-slate-950";
+                selectedEditorTool = btn.getAttribute("data-tool");
+            };
+        });
+        // 默认点选 solid
+        if (toolBtns.length > 0) toolBtns[0].click();
+
+        // 清空编辑器
+        document.getElementById("btn-editor-clear").onclick = () => {
+            playSound('die');
+            customMapElements = [];
+            showToast("画布已清空！");
+        };
+
+        // 地图导入/导出
+        const mapIoModal = document.getElementById("map-io-modal");
+        const mapTextarea = document.getElementById("map-json-textarea");
+
+        document.getElementById("btn-editor-io").onclick = () => {
+            playSound('click');
+            // 自动填充当前的自定义地图结构到输入框中
+            mapTextarea.value = JSON.stringify(customMapElements, null, 2);
+            mapIoModal.classList.remove("hidden");
+        };
+
+        document.getElementById("btn-io-close").onclick = () => {
+            playSound('click');
+            mapIoModal.classList.add("hidden");
+        };
+
+        // 执行导入
+        document.getElementById("btn-io-import").onclick = () => {
+            playSound('click');
+            try {
+                const parsed = JSON.parse(mapTextarea.value);
+                if (Array.isArray(parsed)) {
+                    customMapElements = parsed;
+                    showToast("地图导入成功！");
+                    mapIoModal.classList.add("hidden");
+                } else {
+                    showToast("导入失败：数据必须是数组格式", true);
+                }
+            } catch (err) {
+                showToast("代码格式错误，无法解析！", true);
+            }
+        };
+
+        // 复制到剪贴板 (使用 document.execCommand 避开 iframe 限制)
+        document.getElementById("btn-io-copy").onclick = () => {
+            playSound('click');
+            mapTextarea.select();
+            try {
+                document.execCommand('copy');
+                showToast("复制成功！可粘贴分享给好友");
+            } catch (err) {
+                showToast("复制失败，请手动右键复制", true);
+            }
+        };
+
+        // 直接测试运行用户刚画好的关卡
+        document.getElementById("btn-editor-test").onclick = () => {
+            playSound('win');
+            if (customMapElements.length === 0) {
+                showToast("地图中空空如也，先随便画几个障碍物吧！", true);
+                return;
+            }
+            
+            // 退出编辑器模式，载入最后一关(沙盒 Sandbox)
+            isEditorMode = false;
+            editorToggleBtn.className = "bg-emerald-950 hover:bg-emerald-900 border-2 border-emerald-500 px-3 py-1 rounded-md text-emerald-400 font-bold transition-all";
+            editorPanel.classList.add("hidden");
+
+            // 沙盒关卡在 levels 的最后一关
+            currentLevelIndex = levels.length - 1; 
+            respawnPlayer(player1);
+            respawnPlayer(player2);
+            buildLevel(currentLevelIndex);
+            
+            showToast("测试开始！操作你的方块探索终点吧");
+        };
+
+        document.getElementById("btn-editor-exit").onclick = () => {
+            exitEditor();
+        };
+
+        function exitEditor() {
+            isEditorMode = false;
+            editorToggleBtn.className = "bg-emerald-950 hover:bg-emerald-900 border-2 border-emerald-500 px-3 py-1 rounded-md text-emerald-400 font-bold transition-all";
+            editorPanel.classList.add("hidden");
+            buildLevel(currentLevelIndex);
+        }
+
+        buildLevel(0);
+        updateUI();
+        showLanguageModal(false); 
+        gameLoop();
+    </script>
+</body>
+</html>
