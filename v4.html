@@ -718,7 +718,8 @@
                 toastNoObstacles: "画卷上还没有任何机关，先添置几个尖刺吧！",
                 toastTestStarted: "遗迹测试开始！保护好你的小史莱姆",
                 devClose: "封存并返回 (Save & Close)",
-                infiniteLabel: "🎲 随机无限遗迹 "
+                infiniteLabel: "🎲 随机无限遗迹 ",
+                toastRandomCleared: "🎲 突破重围！随机遗迹已重新编织！"
             },
             en: {
                 title: "Ultimate Unfair Slime",
@@ -835,7 +836,8 @@
                 toastNoObstacles: "No obstacles placed on map yet!",
                 toastTestStarted: "Sandbox play test started!",
                 devClose: "Save & Close",
-                infiniteLabel: "🎲 Random Infinite Ruins "
+                infiniteLabel: "🎲 Random Infinite Ruins ",
+                toastRandomCleared: "🎲 Level Cleared! Remaking Ruins..."
             },
             ja: {
                 title: "古代の遺跡：いじわるなスライム",
@@ -944,7 +946,8 @@
                 toastNoObstacles: "キャンバスに罠がありません！罠を配置してください",
                 toastTestStarted: "テスト開始！スライムを守り抜こう！",
                 devClose: "保存して閉じる",
-                infiniteLabel: "🎲 無限ランダム遺跡 "
+                infiniteLabel: "🎲 無限ランダム遺跡 ",
+                toastRandomCleared: "🎲 レベルクリア！新しい遺跡を生成中..."
             },
             ko: {
                 title: "고대 유적: 악랄한 슬라임",
@@ -1053,7 +1056,8 @@
                 toastNoObstacles: "맵에 배치된 장애물이 없습니다! 먼저 가시를 배치해 주세요",
                 toastTestStarted: "샌드박스 테스트가 시작되었습니다! 슬라임을 지켜내세요",
                 devClose: "저장 및 종료 (Save & Close)",
-                infiniteLabel: "🎲 무한 랜덤 유적 "
+                infiniteLabel: "🎲 무한 랜덤 유적 ",
+                toastRandomCleared: "🎲 스테이지 클리어! 새로운 유적을 생성합니다..."
             },
             es: {
                 title: "Ruinas Antiguas: El Slime Injusto",
@@ -1162,7 +1166,8 @@
                 toastNoObstacles: "¡No hay obstáculos colocados! Agrega espinas primero",
                 toastTestStarted: "¡Prueba de mapa iniciada! Protege a tu slime",
                 devClose: "Guardar y Cerrar (Save & Close)",
-                infiniteLabel: "🎲 Ruinas Aleatorias "
+                infiniteLabel: "🎲 Ruinas Aleatorias ",
+                toastRandomCleared: "🎲 ¡Nivel completado! Regenerando ruinas..."
             },
             ru: {
                 title: "Древние Руины: Вредный Слайм",
@@ -1271,7 +1276,8 @@
                 toastNoObstacles: "На карте нет препятствий! Сначала разместите шипы",
                 toastTestStarted: "Тестовая игра запущена! Защитите своего слайма",
                 devClose: "Сохранить и Закрыть",
-                infiniteLabel: "🎲 Случайные руины "
+                infiniteLabel: "🎲 Случайные руины ",
+                toastRandomCleared: "🎲 Уровень пройден! Пересоздаём руины..."
             },
             fr: {
                 title: "Ruines Anciennes: Le Slime Injuste",
@@ -1380,7 +1386,8 @@
                 toastNoObstacles: "Aucun obstacle placé ! Ajoutez des pièges d'abord",
                 toastTestStarted: "Test démarré ! Protégez votre slime !",
                 devClose: "Enregistrer & Fermer",
-                infiniteLabel: "🎲 Ruines Aléatoires "
+                infiniteLabel: "🎲 Ruines Aléatoires ",
+                toastRandomCleared: "🎲 Niveau terminé ! Régénération des ruines..."
             },
             de: {
                 title: "Alte Ruinen: Der Unfaire Schleim",
@@ -1489,7 +1496,8 @@
                 toastNoObstacles: "Keine Hindernisse platziert! Füge zuerst Dornen hinzu",
                 toastTestStarted: "Testspiel gestartet! Schütze deinen Schleim!",
                 devClose: "Speichern & Beenden",
-                infiniteLabel: "🎲 Zufällige Ruinen "
+                infiniteLabel: "🎲 Zufällige Ruinen ",
+                toastRandomCleared: "🎲 Level geschafft! Ruinen werden neu generiert..."
             },
             pt: {
                 title: "Ruínas Antigas: O Slime Injusto",
@@ -1598,7 +1606,8 @@
                 toastNoObstacles: "Nenhum obstáculo colocado! Insira espinhos primeiro",
                 toastTestStarted: "Jogo de teste iniciado! Defenda o seu slime!",
                 devClose: "Salvar & Fechar (Save & Close)",
-                infiniteLabel: "🎲 Ruínas Aleatórias "
+                infiniteLabel: "🎲 Ruínas Aleatórias ",
+                toastRandomCleared: "🎲 Nível concluído! Regenerando ruínas..."
             },
             it: {
                 title: "Rovine Antiche: Slime Ingiusto",
@@ -1707,7 +1716,8 @@
                 toastNoObstacles: "Nessun ostacolo inserito! Posiziona prima delle spine",
                 toastTestStarted: "Partita di prova avviata! Difendi il tuo slime!",
                 devClose: "Salva e Chiudi (Save & Close)",
-                infiniteLabel: "🎲 Rovine Casuali "
+                infiniteLabel: "🎲 Rovine Casuali ",
+                toastRandomCleared: "🎲 Livello completato! Rigenerazione rovine..."
             }
         };
 
@@ -2229,7 +2239,7 @@
                 document.getElementById("p2-score").className = "text-xl text-white font-black";
                 document.getElementById("p1-score").innerText = p1Score;
                 document.getElementById("p2-score").innerText = p2Score;
-                document.getElementById("ui-vs-tip").innerText = currentLang === 'zh' ? '⚔️ 同屏激烈竞速中 / RACING' : '⚔️ 2P RACING DUEL';
+                document.getElementById("ui-vs-tip").innerText = data.modeVersus;
             } else if (gameMode === 'coop') {
                 document.getElementById("vs-scoreboard").className = "flex justify-between items-center bg-emerald-950/40 border border-emerald-800/50 px-4 py-2 rounded-lg text-sm md:text-base font-bold shadow-inner";
                 document.getElementById("ui-vs-tip").innerText = data.coopRacing;
@@ -2243,7 +2253,7 @@
                 document.getElementById("p2-score").innerText = p2Status;
             } else if (gameMode === 'random') {
                 document.getElementById("vs-scoreboard").className = "flex justify-between items-center bg-purple-950/40 border border-purple-800/50 px-4 py-2 rounded-lg text-sm md:text-base font-bold shadow-inner";
-                document.getElementById("ui-vs-tip").innerText = currentLang === 'zh' ? '🎲 随机无尽模式：永无止境的未知迷宫！' : '🎲 Infinite Random Mode!';
+                document.getElementById("ui-vs-tip").innerText = data.modeRandom;
                 document.getElementById("p1-score").className = "text-sm font-medium text-purple-300";
                 document.getElementById("p2-score").className = "text-sm font-medium text-purple-300";
                 document.getElementById("p1-score").innerText = player1.reachedPortal ? data.coopStatusReady : data.coopStatusGoing;
@@ -2384,7 +2394,7 @@
                 respawnPlayer(player1);
                 respawnPlayer(player2);
                 buildLevel(currentLevelIndex);
-                showToast(currentLang === 'zh' ? "🎲 突破重围！随机遗迹已重新编织！" : "🎲 Level Cleared! Remaking Ruins...");
+                showToast(data.toastRandomCleared || "🎲 Level Cleared! Remaking Ruins...");
             } else {
                 currentLevelIndex++;
                 if (currentLevelIndex >= levels.length) {
@@ -3617,7 +3627,7 @@
             ctx.strokeRect(40, 360, 80, 100);
             ctx.fillStyle = "rgba(244, 63, 94, 0.8)";
             ctx.font = "10px sans-serif";
-            ctx.fillText(currentLang === 'zh' ? "🏁 史莱姆出生魔法阵" : "🏁 Start Area", 42, 410);
+            ctx.fillText(data.canvasStartLabel || "🏁 Start Area", 42, 410);
 
             if (editorMousePos) {
                 const mx = Math.round(editorMousePos.x);
